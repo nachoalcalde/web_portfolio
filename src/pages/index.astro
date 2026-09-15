@@ -1,0 +1,173 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GrainOverlay from '../components/GrainOverlay.astro';
+import LocationPill from '../components/LocationPill.astro';
+import NameMarquee from '../components/NameMarquee.astro';
+import Portrait from '../components/Portrait.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+
+const EMAIL = 'ialcaldecid@gmail.com';
+const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
+---
+
+<Layout
+  title="Nacho Alcalde Cid"
+  description="Security strategy across seven markets in Europe and Latin America."
+>
+  <div class="page">
+    <Portrait />
+
+    <SiteHeader />
+
+    <main class="main">
+      <section class="pitch">
+        <div class="eyebrow">
+          <span class="eyebrow-label">What I bring</span>
+          <span class="eyebrow-rule"></span>
+        </div>
+        <p class="pitch-copy">
+          I work on problems that are broad, badly defined and spread across a lot of people.
+        </p>
+      </section>
+
+      {/* Reserves the portrait's column; collapses to 60px when the blocks stack. */}
+      <div class="portrait-spacer" aria-hidden="true"></div>
+
+      <section class="aside">
+        <p class="now">
+          <span class="now-label">Right now:</span> security strategy across seven markets in Europe
+          and Latin America.
+        </p>
+
+        <div class="contact">
+          <span class="eyebrow-label">Get in touch</span>
+          <a class="contact-link" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
+          <a class="contact-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+        </div>
+      </section>
+    </main>
+
+    <NameMarquee />
+
+    <LocationPill />
+
+    <GrainOverlay />
+  </div>
+</Layout>
+
+<style>
+  .page {
+    position: relative;
+    overflow: hidden;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    padding: 26px clamp(18px, 3.2vw, 48px) 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-text);
+  }
+
+  .main {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(24px, 3vw, 56px);
+    padding: clamp(40px, 10vh, 130px) 0 clamp(58px, 7.5vw, 140px);
+  }
+
+  .pitch {
+    flex: 1 1 240px;
+    min-width: min(100%, 240px);
+    max-width: 520px;
+    animation: rise 1s var(--ease-out) both;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .eyebrow-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .eyebrow-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+
+  .pitch-copy {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(24px, 2.5vw, 42px);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    text-wrap: pretty;
+    color: var(--ink);
+  }
+
+  .portrait-spacer {
+    flex: 0 1 clamp(60px, 56svh, 660px);
+  }
+
+  .aside {
+    flex: 1 1 210px;
+    min-width: min(100%, 210px);
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: rise 1.1s var(--ease-out) both;
+  }
+
+  .now {
+    margin: 0;
+    max-width: 34ch;
+    font-size: 14px;
+    line-height: 1.55;
+    text-wrap: pretty;
+    color: var(--ink-dim);
+  }
+
+  .now-label {
+    color: var(--ink);
+  }
+
+  .contact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .contact-link {
+    width: max-content;
+    max-width: 100%;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-display);
+    font-size: clamp(16px, 1.3vw, 21px);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--ink);
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .contact-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+</style>

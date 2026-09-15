@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+:root {
+  /* Colour */
+  --bg: #100f0e;
+  --ink: #f3efe7;
+  --ink-muted: #c8c1b4;
+  --ink-dim: #9d968a;
+  --ink-faint: #6f6a61;
+  --ink-disabled: #5c564c;
+  --ink-disabled-hover: #8a8377;
+  --rule: #35322e;
+  --hairline: rgba(243, 239, 231, 0.16);
+  --hairline-strong: rgba(243, 239, 231, 0.22);
+  --accent: oklch(0.8 0.11 78);
+  --glass: rgba(16, 15, 14, 0.72);
+
+  /* Type */
+  --font-display: Archivo, Helvetica, Arial, sans-serif;
+  --font-text: "Schibsted Grotesk", Helvetica, Arial, sans-serif;
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-rise: cubic-bezier(0.16, 0.9, 0.2, 1);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes riseUp {
+  from {
+    transform: translateY(108%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* The entrance animations, the marquee and the portrait transition all opt out
+   together. Every keyframe above ends on its resting state, so collapsing the
+   duration leaves the page in its final layout rather than hiding anything.
+   The parallax is JS-driven and guards itself in Portrait.astro. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -2,5 +2,6 @@
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
     "jsxImportSource": "astro"
-  }
+  },
+  "exclude": ["dist", "src_mantenimiento"]
 }

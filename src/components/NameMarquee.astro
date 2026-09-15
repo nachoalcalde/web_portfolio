@@ -1,0 +1,102 @@
+---
+type Glyph = { char: string; delay: number } | { space: string };
+
+// Per-letter reveal delays are fixed by the design handoff, so they are data,
+// not a formula: the gap before the dash does not add the extra beat the
+// word gaps do.
+const GLYPHS: Glyph[] = [
+  { char: 'N', delay: 0.1 },
+  { char: 'a', delay: 0.14 },
+  { char: 'c', delay: 0.18 },
+  { char: 'h', delay: 0.22 },
+  { char: 'o', delay: 0.26 },
+  { space: '0.26em' },
+  { char: 'A', delay: 0.32 },
+  { char: 'l', delay: 0.36 },
+  { char: 'c', delay: 0.4 },
+  { char: 'a', delay: 0.44 },
+  { char: 'l', delay: 0.48 },
+  { char: 'd', delay: 0.52 },
+  { char: 'e', delay: 0.56 },
+  { space: '0.26em' },
+  { char: 'C', delay: 0.62 },
+  { char: 'i', delay: 0.66 },
+  { char: 'd', delay: 0.7 },
+  { space: '0.22em' },
+  { char: '—', delay: 0.74 },
+];
+---
+
+<div class="marquee">
+  <div class="track">
+    <h1 class="name">
+      {
+        GLYPHS.map((glyph) =>
+          'space' in glyph ? (
+            <span class="gap" style={`width:${glyph.space}`} />
+          ) : (
+            <span class="mask">
+              <span class="glyph" style={`animation-delay:${glyph.delay}s`}>{glyph.char}</span>
+            </span>
+          )
+        )
+      }
+    </h1>
+    <div class="name" aria-hidden="true">
+      {
+        GLYPHS.map((glyph) =>
+          'space' in glyph ? (
+            <span class="gap" style={`width:${glyph.space}`} />
+          ) : (
+            <span class="mask">
+              <span class="glyph" style={`animation-delay:${glyph.delay}s`}>{glyph.char}</span>
+            </span>
+          )
+        )
+      }
+    </div>
+  </div>
+</div>
+
+<style>
+  .marquee {
+    position: relative;
+    z-index: 3;
+    overflow: hidden;
+    padding-bottom: clamp(8px, 1.6vh, 22px);
+    pointer-events: none;
+  }
+
+  .track {
+    display: flex;
+    width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+
+  .name {
+    display: flex;
+    margin: 0;
+    padding-right: 0.14em;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 15.6vw;
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  .gap {
+    display: inline-block;
+  }
+
+  .mask {
+    display: inline-block;
+    overflow: hidden;
+  }
+
+  .glyph {
+    display: inline-block;
+    animation: riseUp 1s var(--ease-rise) both;
+  }
+</style>

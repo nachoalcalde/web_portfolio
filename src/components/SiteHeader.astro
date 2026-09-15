@@ -1,0 +1,125 @@
+---
+const EMAIL = 'ialcaldecid@gmail.com';
+
+const UPCOMING = ['Work', 'About', 'Studio'];
+---
+
+<header class="header">
+  <div class="identity">
+    <span class="monogram">NA</span>
+    <span class="names">
+      <span class="full-name">Nacho Alcalde Cid</span>
+      <span class="role">Portfolio — 2026</span>
+    </span>
+  </div>
+
+  <nav class="nav">
+    {
+      UPCOMING.map((label) => (
+        <span class="upcoming">{label}</span>
+      ))
+    }
+    <a class="contact" href={`mailto:${EMAIL}`}>Contact</a>
+  </nav>
+</header>
+
+<style>
+  .header {
+    position: relative;
+    z-index: 4;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px 32px;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    animation: fade 0.9s ease both;
+  }
+
+  .identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+  }
+
+  .monogram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 4px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+
+  .names {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.1;
+  }
+
+  .full-name {
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+
+  .role {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .nav {
+    display: flex;
+    gap: clamp(20px, 2.6vw, 44px);
+    color: var(--ink-dim);
+  }
+
+  /* The prototype used `<a href="#">` with cursor:default for these. They do not
+     navigate, so they are spans: no tab stop, no link semantics. `style-hover`
+     set a --soon flag; here :hover drives both the colour and the ::after badge. */
+  .upcoming {
+    position: relative;
+    color: var(--ink-disabled);
+    cursor: default;
+    transition: color 0.22s;
+  }
+
+  .upcoming::after {
+    content: 'soon';
+    position: absolute;
+    left: 100%;
+    top: -0.35em;
+    margin-left: 5px;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    opacity: 0;
+    transition: opacity 0.22s;
+  }
+
+  .upcoming:hover {
+    color: var(--ink-disabled-hover);
+  }
+
+  .upcoming:hover::after {
+    opacity: 1;
+  }
+
+  .contact {
+    color: var(--ink);
+  }
+
+  .contact:hover {
+    color: var(--accent);
+  }
+</style>

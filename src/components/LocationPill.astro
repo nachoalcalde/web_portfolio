@@ -1,0 +1,84 @@
+---
+interface Props {
+  /** Prototype prop `showClock`: hides the separator and the Madrid time. */
+  showClock?: boolean;
+}
+
+const { showClock = true } = Astro.props;
+---
+
+<div class="pill">
+  <span>Based in Madrid</span>
+  {
+    showClock && (
+      <span class="clock" data-clock hidden>
+        <span class="separator">·</span>
+        <span class="time" data-clock-time />
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .pill {
+    position: fixed;
+    left: clamp(14px, 2.6vw, 40px);
+    bottom: clamp(14px, 2.6vw, 34px);
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 10px 14px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: var(--glass);
+    backdrop-filter: blur(8px);
+    font-size: 12.5px;
+    letter-spacing: 0.01em;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    animation: rise 1.4s var(--ease-out) both;
+  }
+
+  .clock {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Without JS the clock never unhides, so the pill degrades to the city alone
+     instead of a dangling separator. */
+  .clock[hidden] {
+    display: none;
+  }
+
+  .separator {
+    color: var(--ink-faint);
+  }
+
+  .time {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+</style>
+
+<script>
+  const clock = document.querySelector<HTMLElement>('[data-clock]');
+  const time = document.querySelector<HTMLElement>('[data-clock-time]');
+
+  if (clock && time) {
+    const format = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    });
+
+    const tick = () => {
+      time.textContent = format.format(new Date());
+      clock.hidden = false;
+    };
+
+    tick();
+    setInterval(tick, 20_000);
+  }
+</script>

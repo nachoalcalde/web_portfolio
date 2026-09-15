@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Social card, resolved against `site` in astro.config.mjs. */
+  image?: string;
+}
+
+const { title, description, image = '/og.jpg' } = Astro.props;
+
+// Crawlers need absolute URLs. `Astro.site` supplies them once the domain is
+// set in astro.config.mjs; until then fall back to the current origin so dev
+// and preview builds still resolve.
+const base = Astro.site ?? Astro.url;
+const canonical = new URL(Astro.url.pathname, base);
+const socialImage = new URL(image, base);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Schibsted+Grotesk:wght@400;500&display=swap"
+    />
+    <meta name="theme-color" content="#100f0e" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nacho Alcalde Cid" />
+    <meta property="og:title" content={title} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Nacho Alcalde Cid" />
+    {description && <meta property="og:description" content={description} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:image" content={socialImage} />
+    {description && <meta name="twitter:description" content={description} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
