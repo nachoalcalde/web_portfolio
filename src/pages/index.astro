@@ -15,8 +15,6 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
   description="Security strategy in Sanitas (Bupa) across seven markets in Europe and Latin America."
 >
   <div class="page">
-    <Portrait />
-
     <SiteHeader />
 
     <main class="main">
@@ -30,7 +28,8 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
         </p>
       </section>
 
-      {/* Reserves the portrait's column; collapses to 60px when the blocks stack. */}
+      {/* Reserves the portrait's column while the portrait is a background
+          layer; from 1199px down the portrait joins the flow and this goes. */}
       <div class="portrait-spacer" aria-hidden="true"></div>
 
       <section class="aside">
@@ -46,9 +45,17 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
       </section>
     </main>
 
-    <NameMarquee />
+    {/* `display: contents` above 640px, so on desktop these three stay direct
+        children of .page and the layout is the one that was signed off. On a
+        phone the wrapper becomes the one-screen hero and `order` lifts it above
+        <main>, which then holds the rest of the page below the fold. */}
+    <div class="hero">
+      <Portrait />
 
-    <LocationPill />
+      <NameMarquee />
+
+      <LocationPill />
+    </div>
 
     <GrainOverlay />
   </div>
@@ -58,10 +65,13 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
   .page {
     position: relative;
     overflow: hidden;
+    min-height: 100vh;
     min-height: 100svh;
     display: flex;
     flex-direction: column;
-    padding: 26px clamp(18px, 3.2vw, 48px) 0;
+    padding: 26px var(--gutter) 0;
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
     background: var(--bg);
     color: var(--ink);
     font-family: var(--font-text);
@@ -117,8 +127,16 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
     color: var(--ink);
   }
 
+  /* 56svh is the reserved width the design asks for, and the columns are meant
+     to tuck slightly over the figure's arms. --portrait-w caps it so that tuck
+     cannot grow into the shirt on a very large screen, where 56svh would
+     otherwise fall far short of the image. */
   .portrait-spacer {
-    flex: 0 1 clamp(60px, 56svh, 660px);
+    flex: 0 1 max(60px, min(56svh, var(--portrait-w)));
+  }
+
+  .hero {
+    display: contents;
   }
 
   .aside {
@@ -183,5 +201,132 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
   .contact-link:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
+  }
+
+  /* Tablets, narrow windows and phones held sideways: 240px + 210px of text
+     plus the figure between them no longer fit on one line, so the figure takes
+     the whole first screen and the copy moves below the fold. The header is
+     fixed from here down, which is what lets the hero be exactly one screen. */
+  @media (max-width: 1199px) {
+    .page {
+      padding-top: 0;
+    }
+
+    .hero {
+      position: relative;
+      display: flex;
+      flex: 0 0 auto;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 100svh;
+    }
+
+    /* `order` puts this after the hero on screen while leaving it before it in
+       the source, so the copy is still what a screen reader reads first. */
+    .main {
+      order: 1;
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: clamp(20px, 3.4vw, 44px);
+      padding: clamp(40px, 8svh, 96px) 0 calc(clamp(48px, 8svh, 88px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .portrait-spacer {
+      display: none;
+    }
+
+    .pitch {
+      flex: 1 1 auto;
+      max-width: 54%;
+    }
+
+    .aside {
+      flex: 0 1 auto;
+      max-width: min(40%, 380px);
+      gap: 24px;
+    }
+
+    /* 2.5vw left the pitch at its 24px floor on every tablet, which read as
+       desktop type squeezed into a phone. These are sized for the band. */
+    .pitch-copy {
+      font-size: clamp(30px, 4.6vw, 46px);
+    }
+
+    .eyebrow-label {
+      font-size: 12px;
+    }
+
+    .now {
+      max-width: 36ch;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .contact-link {
+      font-size: clamp(19px, 2.2vw, 24px);
+    }
+  }
+
+  /* Phones: the copy below the fold goes to one column. */
+  @media (max-width: 639px) {
+    .main {
+      flex-direction: column;
+      align-items: stretch;
+      gap: clamp(26px, 5svh, 44px);
+      padding: clamp(44px, 9svh, 88px) 0 calc(clamp(52px, 9svh, 92px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .pitch,
+    .aside {
+      flex: 0 0 auto;
+      min-width: 0;
+      max-width: none;
+    }
+
+    /* Grows off the viewport width rather than 2.5vw, which would leave it at
+       its 24px floor on every phone made. 8.8vw is ~39px on a Pro Max. */
+    .pitch-copy {
+      font-size: clamp(27px, 8.8vw, 42px);
+    }
+
+    /* No ch cap here: the column is already the screen, and 17px across a
+       400px line is about 47 characters, well inside a comfortable measure. */
+    .now {
+      max-width: none;
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .contact {
+      gap: 12px;
+    }
+
+    /* Same trick as the header's Contact: a thumb-sized hit area without
+       moving the underline the design puts under each link. */
+    .contact-link {
+      position: relative;
+      font-size: 20px;
+    }
+
+    .contact-link::before {
+      content: '';
+      position: absolute;
+      inset: -8px -8px;
+    }
+  }
+
+  /* Landscape phones and short windows. The name and the figure already shrink
+     off svh in global.css; what is left is to stop the paddings from spending
+     height the copy needs. */
+  @media (max-height: 560px) and (orientation: landscape) {
+    .main {
+      padding: clamp(24px, 6svh, 56px) 0 calc(clamp(24px, 6svh, 56px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .pitch-copy {
+      font-size: clamp(20px, 2.4vw, 30px);
+    }
   }
 </style>

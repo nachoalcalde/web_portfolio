@@ -8,30 +8,74 @@ import portrait from '../assets/portrait.png';
   data-portrait
   src={portrait}
   alt="Nacho Alcalde Cid"
+  widths={[220, 320, 440, 660, 880, 1024]}
+  sizes="(max-width: 639px) 145vw, (max-width: 1199px) 95vw, 46vw"
   loading="eager"
   decoding="async"
   fetchpriority="high"
 />
 
 <style>
+  /* Width-driven rather than height-driven: --portrait-w is the one value the
+     reserved column in index.astro also reads, so the image and the space kept
+     for it cannot drift apart. Height follows from the intrinsic ratio. */
   .portrait {
     position: absolute;
     bottom: 0;
     left: 50%;
     z-index: 1;
-    height: min(94svh, 1020px);
-    width: auto;
+    width: var(--portrait-w);
+    height: auto;
+    /* The global `img { max-width: 100% }` would otherwise clip the bleed below
+       1200px back to the content box, leaving a gutter-wide bar on the right. */
     max-width: none;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
     transition: transform 0.6s var(--ease-out);
     will-change: transform;
     animation: fade 1.2s ease both;
+  }
+
+  /* No room left for text either side of the figure, so it stops being a
+     background layer and becomes the hero: the first screen, with the copy
+     pushed below the fold. It fills the hero edge to edge, and `contain` plus a
+     bottom `object-position` keeps the whole figure visible and standing on the
+     bottom of the screen rather than floating in the middle of it. The parallax
+     offset is a custom property precisely so this swap does not have to fight
+     an inline transform. */
+  @media (max-width: 1199px) {
+    .portrait {
+      position: relative;
+      left: auto;
+      display: block;
+      flex: 1 1 auto;
+      min-height: 0;
+      width: calc(100% + var(--gutter) * 2);
+      height: auto;
+      margin: 0 calc(var(--gutter) * -1);
+      object-fit: contain;
+      object-position: 50% 100%;
+      transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
+    }
+  }
+
+  /* Phones: the figure stops being scaled to fit and is cropped by the screen
+     instead, which is the only way a cut-out reads as a close-up. It grows into
+     whatever the hero has left over and `cover` spends that on the sides, so
+     the arms bleed off the edges and the face stays large. `object-position`
+     keeps the top of the head just under the header. */
+  @media (max-width: 639px) {
+    .portrait {
+      flex: 1 1 auto;
+      object-fit: cover;
+      object-position: 50% 0%;
+    }
   }
 </style>
 
 <script>
   // <x-dc> held a ref to the <img> and mutated style.transform directly rather
-  // than going through state; the same applies here.
+  // than going through state; here it writes the two offsets the transform
+  // above reads, so the layout keeps ownership of the centring.
   const portrait = document.querySelector<HTMLImageElement>('[data-portrait]');
 
   if (portrait) {
@@ -44,8 +88,8 @@ import portrait from '../assets/portrait.png';
       const x = (event.clientX / window.innerWidth - 0.5) * 2;
       const y = (event.clientY / window.innerHeight - 0.5) * 2;
 
-      portrait.style.transform =
-        `translateX(-50%) translate3d(${(x * -4).toFixed(2)}px, ${(y * -2).toFixed(2)}px, 0)`;
+      portrait.style.setProperty('--parallax-x', `${(x * -4).toFixed(2)}px`);
+      portrait.style.setProperty('--parallax-y', `${(y * -2).toFixed(2)}px`);
     };
 
     window.addEventListener('mousemove', onMove, { passive: true });

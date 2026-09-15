@@ -22,6 +22,39 @@
   /* Easing */
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --ease-rise: cubic-bezier(0.16, 0.9, 0.2, 1);
+
+  /* Layout. These three live here rather than in a component because three
+     components read them: the page sets its gutter from --gutter, the image
+     and the column that reserves it both size from --portrait-w, and the
+     marquee sizes its name from --name-size (and offsets itself by it). One
+     breakpoint below therefore moves the whole composition at once. */
+  --gutter: clamp(18px, 3.2vw, 48px);
+  --portrait-w: min(72.9svh, 46vw, 1024px);
+  --name-size: min(15.6vw, 30svh);
+}
+
+/* The portrait is a cut-out, so it cannot be cropped the way a full-bleed photo
+   can: its width is what has to give. 72.9svh is the width at which it stands
+   94svh tall (its ratio is 1024/1320), which is the height the design asks for;
+   46vw keeps it from eating the text columns on tall desktop screens, and
+   1024px is its natural width — past that it would only get soft. */
+
+/* --portrait-w only has a job on desktop. Below 1200px the figure is sized by
+   the hero it fills rather than by a width of its own (see Portrait.astro). */
+
+@media (max-width: 639px) {
+  :root {
+    --gutter: clamp(16px, 4.6vw, 26px);
+  }
+}
+
+/* Landscape phones and short windows: height is the scarce axis, so the name is
+   driven off it. Last in the file so it wins over the width query above, which
+   a 844x390 phone also matches. */
+@media (max-height: 560px) and (orientation: landscape) {
+  :root {
+    --name-size: min(15.6vw, 22svh);
+  }
 }
 
 html,
@@ -32,8 +65,20 @@ body {
   color: var(--ink);
 }
 
+/* iOS Safari otherwise inflates text when a phone is turned to landscape, which
+   breaks every height budget on the page. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 * {
   box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 a {

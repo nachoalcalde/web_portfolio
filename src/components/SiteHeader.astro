@@ -1,10 +1,13 @@
 ---
+import GrainOverlay from './GrainOverlay.astro';
+
 const EMAIL = 'ialcaldecid@gmail.com';
+const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
 const UPCOMING = ['Work', 'About', 'Studio'];
 ---
 
-<header class="header">
+<header class="header" data-header>
   <div class="identity">
     <span class="monogram">NA</span>
     <span class="names">
@@ -21,7 +24,46 @@ const UPCOMING = ['Work', 'About', 'Studio'];
     }
     <a class="contact" href={`mailto:${EMAIL}`}>Contact</a>
   </nav>
+
+  <button
+    class="burger"
+    type="button"
+    aria-label="Open menu"
+    aria-expanded="false"
+    aria-controls="site-menu"
+    data-menu-toggle
+  >
+    <span class="bars" aria-hidden="true"></span>
+  </button>
 </header>
+
+{/* Phone-only. Kept out of <header> so the header can stay above it and keep
+    showing the identity over the panel, the way the reference does. */}
+<div class="menu" id="site-menu" data-menu inert>
+  <ul class="menu-list">
+    {
+      UPCOMING.map((label) => (
+        <li class="menu-row">
+          <span class="menu-item is-soon">
+            {label}
+            <em class="menu-soon">soon</em>
+          </span>
+        </li>
+      ))
+    }
+    <li class="menu-row">
+      <a class="menu-item" href={`mailto:${EMAIL}`}>Contact</a>
+    </li>
+  </ul>
+
+  <div class="menu-foot">
+    <a class="menu-link" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
+    <a class="menu-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+    <span class="menu-place">Based in Madrid</span>
+  </div>
+
+  <GrainOverlay />
+</div>
 
 <style>
   .header {
@@ -122,4 +164,336 @@ const UPCOMING = ['Work', 'About', 'Studio'];
   .contact:hover {
     color: var(--accent);
   }
+
+  /* Two rules over a 40px button: the glyph is 20px wide, the negative margins
+     let the target overhang the header's edges without moving the glyph. */
+  .burger {
+    display: none;
+    position: relative;
+    align-self: center;
+    width: 40px;
+    height: 40px;
+    margin: -10px -10px -10px 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .bars,
+  .bars::after {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: currentColor;
+  }
+
+  .bars {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -4px);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .bars::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 0;
+    transition:
+      top 0.3s var(--ease-out),
+      transform 0.3s var(--ease-out);
+  }
+
+  /* The open state lives on aria-expanded, so the attribute the screen reader
+     needs is also the one the animation reads. The header sits above the panel,
+     which is what keeps this button clickable while the panel is open: a second
+     X inside the panel would be under the header's box and never get the click. */
+  .burger[aria-expanded='true'] .bars {
+    transform: translate(-50%, 0) rotate(45deg);
+  }
+
+  .burger[aria-expanded='true'] .bars::after {
+    top: 0;
+    transform: rotate(-90deg);
+  }
+
+  .menu {
+    display: none;
+  }
+
+  /* The badge needs a hover to appear and a gap to sit in. On a touch screen it
+     has neither, so it would only ever be a label pushed into the next item. */
+  @media (hover: none) {
+    .upcoming::after {
+      content: none;
+    }
+  }
+
+  /* The hero is one full screen from here down, so the header floats over it
+     and stays reachable once the copy below has scrolled up under it. */
+  @media (max-width: 1199px) {
+    .header {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 30;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 16px;
+      padding: 18px var(--gutter);
+      padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+      padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+      font-size: 14px;
+      transition:
+        background 0.3s,
+        border-color 0.3s;
+      border-bottom: 1px solid transparent;
+    }
+
+    /* Over the portrait it stays bare; once there is text underneath it needs
+       a surface. Same glass as the location pill. */
+    .header[data-scrolled] {
+      border-bottom-color: var(--hairline);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+    }
+  }
+
+  @media (max-width: 639px) {
+
+    /* The panel is its own surface, so the scrolled glass would read as a
+       second, slightly different black band across the top of it. */
+    :global(html.menu-open) .header {
+      border-bottom-color: transparent;
+      background: none;
+      backdrop-filter: none;
+    }
+
+    .nav {
+      display: none;
+    }
+
+    .burger {
+      display: block;
+    }
+
+    .full-name {
+      font-size: 15px;
+    }
+
+    .role {
+      font-size: 11px;
+    }
+
+    .menu {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      padding: 18px var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px));
+      background: #0b0a09;
+      visibility: hidden;
+      transform: translateX(100%);
+      transition:
+        transform 0.55s var(--ease-out),
+        visibility 0s linear 0.55s;
+    }
+
+    .menu[data-open] {
+      visibility: visible;
+      transform: translateX(0);
+      transition:
+        transform 0.55s var(--ease-out),
+        visibility 0s;
+    }
+
+    /* Starts below the header, which floats over the panel rather than being
+       covered by it. The floor clears its 66px with air to spare. */
+    .menu-list {
+      margin: clamp(78px, 15svh, 124px) 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .menu-row {
+      overflow: hidden;
+      border-top: 1px solid var(--hairline);
+    }
+
+    .menu-row:last-child {
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    /* Masked rise, the same move the name makes letter by letter on load. */
+    .menu-item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 14px 0;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(32px, 10.5vw, 48px);
+      line-height: 1.04;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      transform: translateY(110%);
+      transition: transform 0.6s var(--ease-rise);
+    }
+
+    .menu-item.is-soon {
+      color: var(--ink-disabled);
+    }
+
+    .menu-soon {
+      font-family: var(--font-text);
+      font-size: 10px;
+      font-style: normal;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .menu[data-open] .menu-item {
+      transform: translateY(0);
+    }
+
+    .menu[data-open] .menu-row:nth-child(1) .menu-item {
+      transition-delay: 0.1s;
+    }
+
+    .menu[data-open] .menu-row:nth-child(2) .menu-item {
+      transition-delay: 0.14s;
+    }
+
+    .menu[data-open] .menu-row:nth-child(3) .menu-item {
+      transition-delay: 0.18s;
+    }
+
+    .menu[data-open] .menu-row:nth-child(4) .menu-item {
+      transition-delay: 0.22s;
+    }
+
+    .menu-foot {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 32px;
+      font-size: 15px;
+      color: var(--ink-dim);
+      opacity: 0;
+      transition: opacity 0.4s ease 0.1s;
+    }
+
+    .menu[data-open] .menu-foot {
+      opacity: 1;
+      transition-delay: 0.32s;
+    }
+
+    .menu-link {
+      width: max-content;
+      color: var(--ink);
+    }
+
+    .menu-place {
+      color: var(--ink-faint);
+    }
+  }
+
+  /* The panel is the scroll container's stand-in while it is open; without this
+     the page behind it keeps scrolling under the overlay. */
+  :global(html.menu-open),
+  :global(html.menu-open body) {
+    overflow: hidden;
+  }
 </style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+
+  if (toggle && menu) {
+    const phone = window.matchMedia('(max-width: 639px)');
+
+    // The button is the panel's close control too, so it belongs in the cycle:
+    // without it the panel could be opened by keyboard and never closed.
+    const focusCycle = () =>
+      [toggle, ...Array.from(menu.querySelectorAll<HTMLElement>('a[href], button'))].filter(
+        (element) => element.offsetParent !== null
+      );
+
+    const setOpen = (open: boolean) => {
+      // Read before inert lands: the browser drops focus out of an inert
+      // subtree, and there would be nothing left to move back from.
+      const focusWasInside = menu.contains(document.activeElement);
+
+      menu.toggleAttribute('data-open', open);
+      menu.toggleAttribute('inert', !open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      document.documentElement.classList.toggle('menu-open', open);
+
+      if (!open && focusWasInside) toggle.focus();
+    };
+
+    toggle.addEventListener('click', () => setOpen(!menu.hasAttribute('data-open')));
+
+    // Contact hands off to a mail client and would otherwise be found still
+    // open on the way back.
+    menu.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('a[href]')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!menu.hasAttribute('data-open')) return;
+
+      if (event.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const items = focusCycle();
+      if (items.length === 0) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+
+    // Resizing past the breakpoint hides the panel in CSS; without this the
+    // scroll lock would survive on a layout that has no way to release it.
+    phone.addEventListener('change', (event) => {
+      if (!event.matches && menu.hasAttribute('data-open')) setOpen(false);
+    });
+  }
+
+  if (header) {
+    let scrolled = false;
+
+    const onScroll = () => {
+      const next = window.scrollY > 40;
+      if (next === scrolled) return;
+      scrolled = next;
+      header.toggleAttribute('data-scrolled', next);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+</script>

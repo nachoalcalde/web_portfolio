@@ -62,9 +62,24 @@ const GLYPHS: Glyph[] = [
   .marquee {
     position: relative;
     z-index: 3;
+    flex: 0 0 auto;
     overflow: hidden;
     padding-bottom: clamp(8px, 1.6vh, 22px);
     pointer-events: none;
+  }
+
+  /* Below 1200px the name is laid over the hero rather than stacked under the
+     figure: taking it out of the flow is what lets the image run all the way to
+     the bottom edge of the screen. The negative insets bleed it past the page
+     gutter, or it would scroll inside a boxed-in strip. */
+  @media (max-width: 1199px) {
+    .marquee {
+      position: absolute;
+      right: calc(var(--gutter) * -1);
+      bottom: 0;
+      left: calc(var(--gutter) * -1);
+      padding-bottom: calc(clamp(8px, 1.6vh, 22px) + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   .track {
@@ -79,7 +94,7 @@ const GLYPHS: Glyph[] = [
     padding-right: 0.14em;
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: 15.6vw;
+    font-size: var(--name-size);
     line-height: 0.8;
     letter-spacing: -0.05em;
     white-space: nowrap;
