@@ -12,7 +12,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
 <Layout
   title="Nacho Alcalde Cid"
-  description="Security strategy across seven markets in Europe and Latin America."
+  description="Security strategy in Sanitas (Bupa) across seven markets in Europe and Latin America."
 >
   <div class="page">
     <Portrait />
@@ -35,8 +35,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
       <section class="aside">
         <p class="now">
-          <span class="now-label">Right now:</span> security strategy across seven markets in Europe
-          and Latin America.
+          <span class="now-label">Right now:</span> security strategy in <a class="inline-link" href="https://www.sanitas.es" target="_blank" rel="noopener">Sanitas</a> (Bupa) across seven markets in Europe and Latin America.
         </p>
 
         <div class="contact">
@@ -143,6 +142,21 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
   .now-label {
     color: var(--ink);
+  }
+
+  /* Keeps a standing underline rather than revealing itself only on hover, so
+     the link is findable by keyboard and without relying on colour alone. */
+  .inline-link {
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .inline-link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 
   .contact {
