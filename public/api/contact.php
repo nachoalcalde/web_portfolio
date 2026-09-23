@@ -29,6 +29,15 @@ declare(strict_types=1);
 const TO = 'ialcaldecid@gmail.com';
 
 /**
+ * The only pages allowed to post here. Browsers send Origin on every POST, so
+ * a form on someone else's site cannot use visitors' browsers to post in bulk.
+ */
+const ALLOWED_ORIGINS = ['https://nachoalcaldecid.com', 'https://www.nachoalcaldecid.com'];
+
+/** Named in EHLO. Fixed, because SERVER_NAME can echo the request's Host. */
+const SITE_HOST = 'nachoalcaldecid.com';
+
+/**
  * Fallback sender, used only when there are no SMTP credentials. With them,
  * the sender is the mailbox that authenticates, because a From: that does not
  * match the mailbox is the misalignment the whole exercise is about.
@@ -54,9 +63,17 @@ const MAX_BODY_BYTES = 20000;
 const MIN_ELAPSED_MS = 3000;
 const RATE_LIMIT = 5;
 const RATE_WINDOW_SECONDS = 3600;
+/**
+ * Across every address at once. The per-address limit does nothing against
+ * many addresses; this caps what they can put in the inbox in a day.
+ */
+const GLOBAL_LIMIT = 40;
+const GLOBAL_WINDOW_SECONDS = 86400;
 
+header_remove('X-Powered-By');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+header('X-Content-Type-Options: nosniff');
 
 /** @return void */
 function respond(int $status, array $body)
@@ -74,7 +91,9 @@ function respond(int $status, array $body)
  */
 function pretend_ok()
 {
-    respond(200, ['ok' => true]);
+    // Shaped and timed like a real send, or the difference is the tell.
+    usleep(random_int(500000, 900000));
+    respond(200, ['ok' => true, 'via' => 'smtp']);
 }
 
 /** @return void */
@@ -90,15 +109,24 @@ function cut(string $value, int $max): string
 
 function field(array $data, string $key, int $max): string
 {
-    $value = isset($data[$key]) && is_string($data[$key]) ? trim($data[$key]) : '';
+    $value = isset($data[$key]) && is_string($data[$key]) ? $data[$key] : '';
 
-    return cut($value, $max);
+    // Invalid UTF-8 is dropped rather than passed on to a header encoder.
+    if (preg_match('//u', $value) !== 1) {
+        return '';
+    }
+
+    // Control characters have no business in an answer; line breaks and tabs
+    // stay, and one_line() takes the breaks out where a header needs it.
+    $value = (string) preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F\x{80}-\x{9F}]/u', '', $value);
+
+    return cut(trim($value), $max);
 }
 
 /** Headers are line-based: a newline in a value is an injected header. */
 function one_line(string $value): string
 {
-    return trim((string) preg_replace('/[\r\n]+/', ' ', $value));
+    return trim((string) preg_replace('/[\r\n\t\x{2028}\x{2029}]+/u', ' ', $value));
 }
 
 function has_non_ascii(string $value): bool
@@ -119,34 +147,41 @@ function encode_header(string $value): string
 }
 
 /**
- * One bucket of timestamps per address, in the system temp dir so nothing
- * writable ends up under the web root.
+ * One bucket of timestamps per key, in the system temp dir so nothing writable
+ * ends up under the web root. The file stays locked from the read to the
+ * write, or a burst of parallel requests would all read the same count and
+ * all get through.
  */
-function rate_limited(string $ip): bool
+function over_limit(string $key, int $limit, int $window): bool
 {
-    $path = sys_get_temp_dir() . '/portfolio-contact-' . hash('sha256', $ip) . '.json';
-    $now = time();
-    $hits = [];
-
-    if (is_readable($path)) {
-        $stored = json_decode((string) file_get_contents($path), true);
-        if (is_array($stored)) {
-            $hits = $stored;
-        }
+    $path = sys_get_temp_dir() . '/portfolio-contact-' . hash('sha256', $key) . '.json';
+    $handle = @fopen($path, 'c+');
+    if ($handle === false) {
+        // Better to let a message through than to lock everyone out because
+        // the temp dir is full or read-only.
+        return false;
     }
 
-    $hits = array_values(array_filter($hits, function ($seen) use ($now) {
-        return is_int($seen) && $seen > $now - RATE_WINDOW_SECONDS;
+    flock($handle, LOCK_EX);
+    $now = time();
+    $stored = json_decode((string) stream_get_contents($handle), true);
+    $hits = array_values(array_filter(is_array($stored) ? $stored : [], function ($seen) use ($now, $window) {
+        return is_int($seen) && $seen > $now - $window;
     }));
 
-    if (count($hits) >= RATE_LIMIT) {
-        return true;
+    $limited = count($hits) >= $limit;
+    if (!$limited) {
+        $hits[] = $now;
+        ftruncate($handle, 0);
+        rewind($handle);
+        fwrite($handle, (string) json_encode($hits));
+        fflush($handle);
     }
 
-    $hits[] = $now;
-    @file_put_contents($path, json_encode($hits), LOCK_EX);
+    flock($handle, LOCK_UN);
+    fclose($handle);
 
-    return false;
+    return $limited;
 }
 
 /**
@@ -230,7 +265,7 @@ function address(string $name, string $email): string
     // comma in it would read as a second address.
     $display = has_non_ascii($name)
         ? encode_header($name)
-        : '"' . str_replace('"', '', $name) . '"';
+        : '"' . str_replace(['"', '\\'], '', $name) . '"';
 
     return $display . ' <' . $email . '>';
 }
@@ -252,10 +287,22 @@ function compose(string $from, string $fromName, string $subject, string $body, 
         'Message-ID: <' . bin2hex(random_bytes(8)) . '@' . substr(strrchr($from, '@') ?: '@local', 1) . '>',
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Transfer-Encoding: base64',
     ]);
 
-    return [$headers, (string) preg_replace('/\r\n|\r|\n/', "\r\n", $body)];
+    return [$headers, encode_body($body)];
+}
+
+/**
+ * The body as base64 in 76-character CRLF lines. Nothing the visitor typed
+ * reaches the wire as it is, so no line of theirs can be too long for a mail
+ * server, start with a dot, or end the SMTP transaction early.
+ */
+function encode_body(string $body): string
+{
+    $body = (string) preg_replace('/\r\n|\r|\n/', "\r\n", $body);
+
+    return rtrim(chunk_split(base64_encode($body), 76, "\r\n"));
 }
 
 /**
@@ -313,13 +360,11 @@ function smtp_connect(array $config, array &$trace)
     }
 
     stream_set_timeout($socket, SMTP_TIMEOUT);
-    $host = (string) ($_SERVER['SERVER_NAME'] ?? 'localhost');
-
     // Every step is the reply's three-digit code, which is the whole story and
     // never carries the password.
     $steps = [
         'greeting' => [null, '220'],
-        'ehlo' => ['EHLO ' . $host, '250'],
+        'ehlo' => ['EHLO ' . SITE_HOST, '250'],
         'auth' => ['AUTH LOGIN', '334'],
         'user' => [base64_encode((string) $config['user']), '334'],
         'pass' => [base64_encode((string) $config['pass']), '235'],
@@ -373,9 +418,6 @@ function smtp_send(array $config, string $subject, string $body, string $replyTo
             $replyTo
         );
 
-        // A line of its own ends the message, so any line that already starts
-        // with a dot has to be doubled on the way out.
-        $text = (string) preg_replace('/^\./m', '..', $text);
         fwrite($socket, $headers . "\r\n\r\n" . $text . "\r\n.\r\n");
         $ok = strpos(smtp_read($socket), '250') === 0;
     }
@@ -409,16 +451,18 @@ function send_message(string $subject, string $body, string $name, string $email
     $headers = implode("\r\n", [
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Transfer-Encoding: base64',
         'From: ' . address(FROM_NAME, FROM),
         'Reply-To: ' . $replyTo,
     ]);
 
     // -f sets the envelope sender, which is the address SPF is checked against.
     // Some hosts refuse the fifth argument outright, hence the second attempt.
-    $sent = @mail(TO, encode_header($subject), $body, $headers, '-f' . FROM);
+    // mail() wants plain LF between lines on Linux.
+    $encoded = str_replace("\r\n", "\n", encode_body($body));
+    $sent = @mail(TO, encode_header($subject), $encoded, $headers, '-f' . FROM);
     if (!$sent) {
-        $sent = @mail(TO, encode_header($subject), $body, $headers);
+        $sent = @mail(TO, encode_header($subject), $encoded, $headers);
     }
 
     return $sent ? 'mail' : '';
@@ -429,7 +473,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     fail(405, 'Method not allowed');
 }
 
-$raw = (string) file_get_contents('php://input');
+// A request that says where it comes from has to come from here. Sec-Fetch-Site
+// covers browsers that leave Origin out; scripts can forge both, which is what
+// the rate limits are for.
+$origin = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
+$site = (string) ($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '');
+if (($origin !== '' && !in_array($origin, ALLOWED_ORIGINS, true))
+    || ($site !== '' && $site !== 'same-origin')) {
+    fail(403, 'Forbidden');
+}
+
+// Only JSON. A form elsewhere can post text/plain across sites without asking;
+// application/json makes the browser ask first, and nothing here says yes.
+$type = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+if (strpos($type, 'application/json') !== 0) {
+    fail(415, 'Unsupported content type');
+}
+
+if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > MAX_BODY_BYTES) {
+    fail(413, 'Too large');
+}
+
+$raw = (string) file_get_contents('php://input', false, null, 0, MAX_BODY_BYTES + 1);
 if ($raw === '') {
     fail(400, 'Empty request');
 }
@@ -437,7 +502,7 @@ if (strlen($raw) > MAX_BODY_BYTES) {
     fail(413, 'Too large');
 }
 
-$data = json_decode($raw, true);
+$data = json_decode($raw, true, 4);
 if (!is_array($data)) {
     fail(400, 'Malformed request');
 }
@@ -468,13 +533,19 @@ if (isset($data['topics']) && is_array($data['topics'])) {
 if ($name === '' || $message === '' || $topics === []) {
     fail(422, 'Missing answers');
 }
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+// FILTER_VALIDATE_EMAIL still lets through quoted local parts and the like;
+// a reply address has no need for anything past the plain shape.
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)
+    || preg_match('/^[A-Za-z0-9.!#$%&\'*+\/=?^_`{|}~-]+@[A-Za-z0-9.-]+$/', $email) !== 1) {
     fail(422, 'That email is not valid');
 }
 
 $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
-if (rate_limited($ip)) {
+if (over_limit('ip:' . $ip, RATE_LIMIT, RATE_WINDOW_SECONDS)) {
     fail(429, 'Too many messages from here');
+}
+if (over_limit('all', GLOBAL_LIMIT, GLOBAL_WINDOW_SECONDS)) {
+    fail(429, 'Too many messages today');
 }
 
 // The message goes first because the inbox preview is the first line of the
