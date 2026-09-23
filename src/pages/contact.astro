@@ -1,0 +1,1231 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GrainOverlay from '../components/GrainOverlay.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import { CONTACT_EMAIL, STEPS, pad } from '../data/contact';
+
+const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
+
+const total = STEPS.length;
+const first = STEPS[0];
+const options = STEPS.find((step) => step.kind === 'options')?.options ?? [];
+---
+
+<Layout
+  title="Contact — Nacho Alcalde Cid"
+  description="One question at a time, then it lands in my inbox. Or write to ialcaldecid@gmail.com directly."
+>
+  {/* Same idiom as ScrollReveal: the class lands while the page is still
+      parsing, so the flow never paints for a browser that cannot run it. */}
+  <script is:inline>
+    document.documentElement.classList.add('js-flow');
+  </script>
+
+  <div class="page">
+    <SiteHeader current="contact" />
+
+    <main class="main">
+      <div class="contact-flow" data-flow>
+        <section class="screen" data-screen="question">
+          <div class="meta">
+            <button class="back" type="button" data-back hidden>
+              <span class="arrow" aria-hidden="true">←</span> Back
+            </button>
+            <span class="counter" data-counter>{pad(1)} / {pad(total)}</span>
+          </div>
+
+          <h1 class="question" id="contact-question" data-question>{first.question}</h1>
+
+          {/* Input and textarea share the row; only the step's own field is
+              shown. One row, so the rule under it never jumps. */}
+          <div class="field" data-field>
+            <input
+              class="answer"
+              data-input
+              type={first.type}
+              placeholder={first.placeholder}
+              autocomplete={first.autocomplete}
+              aria-labelledby="contact-question"
+              aria-describedby="contact-hint"
+            />
+            <textarea
+              class="answer answer-long"
+              data-textarea
+              rows="2"
+              hidden
+              aria-labelledby="contact-question"
+              aria-describedby="contact-hint"></textarea>
+            <button class="next" type="button" data-next>
+              Next <span class="arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+
+          <div class="options" data-options hidden role="group" aria-labelledby="contact-question">
+            <div class="option-list">
+              {
+                options.map((label) => (
+                  <button class="option" type="button" aria-pressed="false" data-option={label}>
+                    <span class="dot" aria-hidden="true" />
+                    <span class="option-label">{label}</span>
+                  </button>
+                ))
+              }
+            </div>
+
+            <div class="options-foot">
+              <span class="options-note">Pick as many as apply</span>
+              <button class="next" type="button" data-next>
+                Next <span class="arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="hint" id="contact-hint" data-hint aria-live="polite">
+            {first.required ? 'Required · press Enter to continue' : 'Optional · press Enter to skip'}
+          </p>
+        </section>
+
+        <section class="screen review" data-screen="review" hidden>
+          <div class="meta">
+            <button class="back" type="button" data-back>
+              <span class="arrow" aria-hidden="true">←</span> Back
+            </button>
+            <span class="counter">Review</span>
+          </div>
+
+          {/* Neither of these screens has a field to catch the focus, so the
+              heading takes it and the screen is announced on arrival. */}
+          <h1 class="review-title" tabindex="-1">One last look before this reaches me.</h1>
+
+          <div class="rows">
+            {
+              STEPS.map((step, index) => (
+                <button class="row" type="button" data-row={index}>
+                  <span class="row-num">{pad(index + 1)}</span>
+                  <span class="row-stack">
+                    <span class="row-label">{step.review}</span>
+                    <span class="row-answer is-empty" data-answer>
+                      {step.placeholder ?? 'Not answered'}
+                    </span>
+                  </span>
+                </button>
+              ))
+            }
+          </div>
+
+          <div class="send-row">
+            <button class="send" type="button" data-send>Send it →</button>
+            <span class="send-hint" data-send-hint>Fill the required ones first</span>
+          </div>
+        </section>
+
+        <section class="screen sending" data-screen="sending" hidden>
+          <span class="eyebrow">Sending</span>
+          <h1 class="sending-title" tabindex="-1">On its way…</h1>
+        </section>
+
+        <section class="screen sent" data-screen="sent" hidden>
+          <div class="sent-head">
+            <span class="eyebrow">Sent</span>
+            <h1 class="sent-title" tabindex="-1">Message sent.</h1>
+          </div>
+          <div class="sent-aside">
+            <p class="sent-copy">
+              Thanks, <span data-first-name>then</span>. I read everything that comes through here
+              and I'll write back as soon as I can.
+            </p>
+            <div class="sent-links">
+              <button class="action" type="button" data-reset>Send another →</button>
+              <a class="quiet-link" href="/">Back to home</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen error" data-screen="error" hidden>
+          <span class="eyebrow">Didn't go through</span>
+          <h1 class="error-title" tabindex="-1">That one didn't send.</h1>
+          <p class="error-copy">
+            Your answers are still here — try again, or write to me directly and it reaches the same
+            inbox.
+          </p>
+          <div class="error-actions">
+            <button class="action" type="button" data-send>Try again →</button>
+            {/* The script rewrites the href with the answers already in it, so
+                this stays useful even when the endpoint is the thing at fault. */}
+            <a class="quiet-link" href={`mailto:${CONTACT_EMAIL}`} data-mailto>
+              Send it as an email instead
+            </a>
+          </div>
+        </section>
+
+        {/* Off-screen rather than display:none, which the cruder bots skip.
+            Anything typed in here means the submission was not a person. */}
+        <div class="trap" aria-hidden="true">
+          <label>
+            Leave this field empty
+            <input type="text" tabindex="-1" autocomplete="off" data-trap />
+          </label>
+        </div>
+
+        {/* Fixed, so where it sits in the markup only decides what the script
+            has to reach for: everything the flow owns is inside the flow. */}
+        <div
+          class="progress"
+          role="progressbar"
+          aria-label="Enquiry progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+          aria-valuetext={`Question ${pad(1)} of ${pad(total)}`}
+          data-progress
+        >
+          <div class="progress-spacer"></div>
+          <div class="progress-track">
+            <div class="progress-fill" data-progress-fill></div>
+          </div>
+        </div>
+      </div>
+
+      {/* The questions need JavaScript. The address does not. */}
+      <section class="contact-fallback screen error">
+        <span class="eyebrow">Contact</span>
+        <h1 class="error-title">Write to me directly.</h1>
+        <p class="error-copy">
+          The questions on this page need JavaScript, which is off here. The address does not — it
+          reaches me the same way.
+        </p>
+        <div class="error-actions">
+          <a class="big-link" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          <a class="big-link" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
+          <a class="quiet-link" href="/">Back to home</a>
+        </div>
+      </section>
+    </main>
+
+    <GrainOverlay />
+  </div>
+</Layout>
+
+<style is:global>
+  html:not(.js-flow) .contact-flow {
+    display: none;
+  }
+
+  html.js-flow .contact-fallback {
+    display: none;
+  }
+</style>
+
+<style>
+  .page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    padding: 26px var(--gutter) 0;
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-text);
+  }
+
+  /* One screen at a time, vertically centred in whatever is left under the
+     header. The bottom padding is what keeps the last line off the progress
+     bar, which is fixed and therefore out of the flow. */
+  .main {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(48px, 9vh, 120px) 0 clamp(72px, 10vh, 140px);
+  }
+
+  .screen {
+    animation: fade 1s ease both;
+  }
+
+  /* Fixed height whether or not Back is there, so the question does not shift
+     by a row between step 01 and step 02. */
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 34px;
+    margin-bottom: clamp(28px, 4vh, 56px);
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    border: 0;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.22s;
+  }
+
+  .back,
+  .counter {
+    font-family: var(--font-display);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .back {
+    color: var(--ink-dim);
+  }
+
+  .back:hover {
+    color: var(--accent);
+  }
+
+  .back .arrow {
+    font-size: 13px;
+  }
+
+  .counter {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+  }
+
+  .question {
+    margin: 0 0 clamp(22px, 3.4vh, 40px);
+    max-width: 24ch;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(20px, 1.7vw, 26px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-wrap: pretty;
+    animation: rise 0.5s var(--ease-out) both;
+  }
+
+  .field {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(16px, 2.4vw, 40px);
+    max-width: 1120px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--hairline);
+    animation: rise 0.55s var(--ease-out) 0.05s both;
+  }
+
+  /* `display:flex` above would otherwise beat the browser's own rule for the
+     attribute, and the row would stay on screen through the multi-select step. */
+  .field[hidden] {
+    display: none;
+  }
+
+  /* No box of its own: the rule under the row is the field, and the caret plus
+     the accent placeholder are the whole focus state. */
+  .answer {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    outline: none;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(30px, 4.6vw, 62px);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+
+  /* Two rows at rest, as drawn, but the script grows it line by line as the
+     message is written: at this size two rows is a sentence, and typing into a
+     box that scrolls away from you is not what the design is after. The cap is
+     what keeps the growth from walking the whole composition off the screen. */
+  .answer-long {
+    max-height: 40svh;
+    overflow-y: auto;
+    font-size: clamp(30px, 4.4vw, 58px);
+    resize: none;
+  }
+
+  /* The page's signature detail: the prompt is written in the accent, so the
+     empty field reads as the invitation rather than as a gap. */
+  .answer::placeholder {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  .next {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+    padding: 0 0 5px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgba(243, 239, 231, 0.1);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(15px, 1.2vw, 19px);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    color: var(--ink-disabled);
+    cursor: pointer;
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  /* Dim until the step is answered, but never disabled: clicking it while the
+     answer is missing is how you get told what is missing. */
+  .next[data-ready] {
+    border-bottom-color: var(--rule);
+    color: var(--ink);
+  }
+
+  .next:hover,
+  .send:hover {
+    border-bottom-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .next .arrow {
+    font-size: 0.9em;
+  }
+
+  .options {
+    max-width: 820px;
+    animation: rise 0.55s var(--ease-out) 0.05s both;
+  }
+
+  /* Borders on the top of each row; the container supplies the last line, so
+     the list closes without a doubled rule. */
+  .option-list {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 1.6vw, 22px);
+    width: 100%;
+    padding: clamp(13px, 1.7vh, 18px) 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(18px, 1.9vw, 28px);
+    letter-spacing: -0.02em;
+    text-align: left;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition: color 0.22s;
+  }
+
+  .option:hover,
+  .option[aria-pressed='true'] {
+    color: var(--ink);
+  }
+
+  .dot {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--hairline);
+    transition: background 0.22s;
+  }
+
+  .option[aria-pressed='true'] .dot {
+    background: var(--accent);
+  }
+
+  .option-label {
+    min-width: 0;
+  }
+
+  .options-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: clamp(20px, 3vh, 32px);
+  }
+
+  .options-note,
+  .send-hint {
+    font-size: 12px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .options-note {
+    color: var(--ink-faint);
+  }
+
+  .hint {
+    margin: clamp(20px, 3vh, 34px) 0 0;
+    font-size: 12px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-disabled);
+  }
+
+  .review {
+    max-width: 940px;
+    animation: fade 0.6s ease both;
+  }
+
+  .review .meta {
+    margin-bottom: clamp(28px, 4vh, 52px);
+  }
+
+  .review-title {
+    margin: 0 0 clamp(26px, 4vh, 44px);
+    max-width: 22ch;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 50px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .row {
+    display: flex;
+    gap: clamp(16px, 2.4vw, 40px);
+    width: 100%;
+    padding: clamp(16px, 2vh, 22px) 0;
+    background: none;
+    border: 0;
+    border-top: 1px solid var(--hairline);
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .row-num {
+    flex: 0 0 auto;
+    padding-top: 4px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    transition: color 0.22s;
+  }
+
+  /* The row is a link back into the flow, and its number is the only part small
+     enough to take the accent without the row reading as selected. */
+  .row:hover .row-num {
+    color: var(--accent);
+  }
+
+  .row-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .row-label {
+    font-size: 14px;
+    color: var(--ink);
+  }
+
+  .row-answer {
+    font-family: var(--font-display);
+    font-size: clamp(16px, 1.3vw, 20px);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  /* Unanswered rows keep the question's own placeholder, dimmed: the list still
+     reads as five lines rather than as holes. */
+  .row-answer.is-empty {
+    color: var(--ink-disabled);
+  }
+
+  .send-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px clamp(24px, 3vw, 44px);
+    margin-top: clamp(28px, 4vh, 44px);
+  }
+
+  .send {
+    padding: 0 0 5px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgba(243, 239, 231, 0.1);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 34px);
+    letter-spacing: -0.025em;
+    color: var(--ink-disabled);
+    cursor: pointer;
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .send[data-ready] {
+    border-bottom-color: var(--rule);
+    color: var(--ink);
+  }
+
+  .send-hint {
+    color: var(--ink-disabled);
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* Dim, and the only thing on the screen: the wait is the composition rather
+     than a spinner laid over the form. */
+  .sending {
+    max-width: 900px;
+    animation: fade 0.4s ease both;
+  }
+
+  .sending-title {
+    margin: 22px 0 0;
+    max-width: 16ch;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(34px, 6.4vw, 104px);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+    color: var(--ink-disabled);
+  }
+
+  /* Two columns that become two rows as soon as there is no room: the
+     statement on the left, what to do next on the right. */
+  .sent {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: clamp(24px, 4vw, 80px);
+    animation: rise 0.7s var(--ease-out) both;
+  }
+
+  .sent-head {
+    flex: 1 1 520px;
+    min-width: min(100%, 300px);
+  }
+
+  .sent-title {
+    margin: 22px 0 0;
+    max-width: 14ch;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(38px, 7vw, 118px);
+    line-height: 0.94;
+    letter-spacing: -0.045em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  .sent-aside {
+    flex: 1 1 300px;
+    min-width: min(100%, 260px);
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 4vh, 44px);
+    padding-top: clamp(8px, 4vh, 64px);
+  }
+
+  .sent-copy {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    text-wrap: pretty;
+  }
+
+  .sent-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .error {
+    max-width: 820px;
+    animation: rise 0.6s var(--ease-out) both;
+  }
+
+  .error-title {
+    margin: 22px 0 20px;
+    max-width: 16ch;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(32px, 5vw, 78px);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  .error-copy {
+    margin: 0 0 clamp(26px, 4vh, 40px);
+    max-width: 50ch;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    text-wrap: pretty;
+  }
+
+  .error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px clamp(22px, 2.6vw, 44px);
+  }
+
+  /* The way out of both end screens: display type on the standing rule, a size
+     under the headline and a size over the links beside it. */
+  .action {
+    padding: 0 0 5px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(18px, 1.6vw, 26px);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .quiet-link {
+    width: max-content;
+    max-width: 100%;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--font-display);
+    font-size: clamp(15px, 1.2vw, 19px);
+    letter-spacing: -0.01em;
+    color: var(--ink-dim);
+    transition:
+      color 0.25s,
+      border-color 0.25s;
+  }
+
+  .action:hover,
+  .quiet-link:hover {
+    border-bottom-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Bait. A person never sees it, so anything in it came from a script. */
+  .trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* The only indicator there is, so it has to stay readable over whatever the
+     screen is showing: the gradient is what stops a long answer reading
+     through the rule. */
+  .progress {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    background: linear-gradient(to top, #100f0e 62%, rgba(16, 15, 14, 0));
+    animation: fade 1.4s ease both;
+  }
+
+  .progress-spacer {
+    height: clamp(28px, 5vh, 56px);
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 5px;
+    background: var(--hairline-strong);
+  }
+
+  .progress-fill {
+    width: 0;
+    height: 5px;
+    background: var(--accent);
+    box-shadow: 0 0 18px oklch(0.8 0.11 78 / 0.45);
+    transition: width 0.6s var(--ease-out);
+  }
+
+  /* Every field is reached by a click or by the script moving focus into it, so
+     the ring is only ever wanted for the keyboard. */
+  .back:focus-visible,
+  .next:focus-visible,
+  .option:focus-visible,
+  .row:focus-visible,
+  .send:focus-visible,
+  .action:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  /* These headings are focused by the script, never by the visitor: they are
+     not tab stops, so a ring on them marks nothing a keyboard user can reach
+     and would draw a box around the heading on the way to the review. */
+  .review-title:focus,
+  .sending-title:focus,
+  .sent-title:focus,
+  .error-title:focus {
+    outline: none;
+  }
+
+  /* From here down the header is fixed, so the page has to open below it
+     rather than under it. */
+  @media (max-width: 1199px) {
+    .page {
+      padding-top: var(--header-h);
+    }
+  }
+
+  /* No media queries in the design: clamp() and flex-wrap carry it. The one
+     exception is the Next link, which the handoff puts under the field on a
+     narrow screen — beside it, the answer would be typing into 200px. The
+     input never wraps on its own, since it shrinks to nothing first, so the
+     link is the one given the whole line. */
+  @media (max-width: 639px) {
+    .field {
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    /* Only the field's own Next: the multi-select keeps its link beside the
+       "pick as many" line, which has room for both. */
+    .field > .next {
+      flex: 0 0 100%;
+      justify-content: flex-end;
+      margin-bottom: 0;
+      padding-bottom: 0;
+      /* The row's own rule runs under it now, so its underline would double. */
+      border-bottom: 0;
+    }
+  }
+</style>
+
+<script>
+  import { CONTACT_EMAIL, CONTACT_ENDPOINT, EMAIL_PATTERN, STEPS, pad } from '../data/contact';
+
+  const flow = document.querySelector<HTMLElement>('[data-flow]');
+
+  if (flow) {
+    const screens = {
+      question: flow.querySelector<HTMLElement>('[data-screen="question"]'),
+      review: flow.querySelector<HTMLElement>('[data-screen="review"]'),
+      sending: flow.querySelector<HTMLElement>('[data-screen="sending"]'),
+      sent: flow.querySelector<HTMLElement>('[data-screen="sent"]'),
+      error: flow.querySelector<HTMLElement>('[data-screen="error"]'),
+    };
+
+    const counter = flow.querySelector<HTMLElement>('[data-counter]');
+    const heading = flow.querySelector<HTMLElement>('[data-question]');
+    const fieldRow = flow.querySelector<HTMLElement>('[data-field]');
+    const input = flow.querySelector<HTMLInputElement>('[data-input]');
+    const textarea = flow.querySelector<HTMLTextAreaElement>('[data-textarea]');
+    const optionsBlock = flow.querySelector<HTMLElement>('[data-options]');
+    const hint = flow.querySelector<HTMLElement>('[data-hint]');
+    const sendHint = flow.querySelector<HTMLElement>('[data-send-hint]');
+    const sendButton = flow.querySelector<HTMLButtonElement>('[data-screen="review"] [data-send]');
+    const resetButton = flow.querySelector<HTMLButtonElement>('[data-reset]');
+    const mailtoLink = flow.querySelector<HTMLAnchorElement>('[data-mailto]');
+    const trap = flow.querySelector<HTMLInputElement>('[data-trap]');
+    const firstNameSlot = flow.querySelector<HTMLElement>('[data-first-name]');
+    const progress = flow.querySelector<HTMLElement>('[data-progress]');
+    const progressFill = flow.querySelector<HTMLElement>('[data-progress-fill]');
+
+    const backButtons = flow.querySelectorAll<HTMLButtonElement>('[data-back]');
+    const nextButtons = flow.querySelectorAll<HTMLButtonElement>('[data-next]');
+    const optionButtons = flow.querySelectorAll<HTMLButtonElement>('[data-option]');
+    const rowButtons = flow.querySelectorAll<HTMLButtonElement>('[data-row]');
+    const answerSlots = flow.querySelectorAll<HTMLElement>('[data-answer]');
+    const sendButtons = flow.querySelectorAll<HTMLButtonElement>('[data-send]');
+
+    const total = STEPS.length;
+    /** Opened at load; the endpoint reads it as one more sign of a real visit. */
+    const openedAt = Date.now();
+
+    /** 0..4 are the questions, 5 is the review. */
+    let step = 0;
+    let status: 'idle' | 'sending' | 'sent' | 'error' = 'idle';
+    /** Set rather than array: a topic cannot be picked twice, and it keeps the
+        order they were picked in, which is the order they are sent in. */
+    const topics = new Set<string>();
+    const answers = new Map<string, string>();
+    let nudge = false;
+
+    const value = (index: number) => {
+      const current = STEPS[index];
+      if (!current) return '';
+      if (current.kind === 'options') return [...topics].join(', ');
+      return answers.get(current.id) ?? '';
+    };
+
+    const valid = (index: number) => {
+      const current = STEPS[index];
+      if (!current || !current.required) return true;
+
+      const answer = value(index).trim();
+      if (!answer) return false;
+      if (current.type === 'email') return EMAIL_PATTERN.test(answer);
+      return true;
+    };
+
+    /** The field of the step being shown, or null on the multi-select. */
+    const field = () => {
+      const current = STEPS[step];
+      if (!current) return null;
+      if (current.kind === 'textarea') return textarea;
+      if (current.kind === 'input') return input;
+      return null;
+    };
+
+    // Re-running the animation needs the element to leave and re-enter the
+    // animated state; clearing the inline value hands it back to the sheet.
+    const replay = (element: HTMLElement | null) => {
+      if (!element) return;
+      element.style.animation = 'none';
+      void element.offsetWidth;
+      element.style.animation = '';
+    };
+
+    // Height of the content, floored by the two rows the markup asks for and
+    // capped in CSS. Measured from `auto`, or a shrinking message would keep
+    // the height of the longest thing ever typed.
+    const grow = () => {
+      if (!textarea) return;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+
+    // render() runs on every keystroke. Writing text that has not changed would
+    // re-announce the hint, which is a live region, and can move the caret in a
+    // field the visitor is still typing in.
+    const write = (element: HTMLElement | null, text: string) => {
+      if (element && element.textContent !== text) element.textContent = text;
+    };
+
+    const render = () => {
+      const idle = status === 'idle';
+      const isReview = idle && step >= total;
+      const isQuestion = idle && !isReview;
+      const current = STEPS[step];
+
+      if (screens.question) screens.question.hidden = !isQuestion;
+      if (screens.review) screens.review.hidden = !isReview;
+      if (screens.sending) screens.sending.hidden = status !== 'sending';
+      if (screens.sent) screens.sent.hidden = status !== 'sent';
+      if (screens.error) screens.error.hidden = status !== 'error';
+
+      if (isQuestion && current) {
+        const ready = valid(step);
+
+        write(counter, `${pad(step + 1)} / ${pad(total)}`);
+        write(heading, current.question);
+        backButtons.forEach((button) => {
+          if (button.closest('[data-screen="question"]')) button.hidden = step === 0;
+        });
+
+        if (fieldRow) fieldRow.hidden = current.kind === 'options';
+        if (optionsBlock) optionsBlock.hidden = current.kind !== 'options';
+        const answer = answers.get(current.id) ?? '';
+
+        if (input) {
+          input.hidden = current.kind !== 'input';
+          if (current.kind === 'input') {
+            input.type = current.type ?? 'text';
+            input.placeholder = current.placeholder ?? '';
+            input.setAttribute('autocomplete', current.autocomplete ?? 'off');
+            if (input.value !== answer) input.value = answer;
+          }
+        }
+        if (textarea) {
+          textarea.hidden = current.kind !== 'textarea';
+          if (current.kind === 'textarea') {
+            textarea.placeholder = current.placeholder ?? '';
+            if (textarea.value !== answer) textarea.value = answer;
+            grow();
+          }
+        }
+
+        optionButtons.forEach((button) => {
+          button.setAttribute('aria-pressed', String(topics.has(button.dataset.option ?? '')));
+        });
+
+        nextButtons.forEach((button) => button.toggleAttribute('data-ready', ready));
+
+        write(
+          hint,
+          nudge
+            ? current.type === 'email'
+              ? "That email doesn't look right"
+              : 'This one I do need'
+            : current.required
+              ? 'Required · press Enter to continue'
+              : 'Optional · press Enter to skip'
+        );
+      }
+
+      if (isReview) {
+        const complete = STEPS.every((_, index) => valid(index));
+
+        answerSlots.forEach((slot, index) => {
+          const given = value(index).trim();
+          write(slot, given || STEPS[index]?.placeholder || 'Not answered');
+          slot.classList.toggle('is-empty', !given);
+        });
+
+        if (sendButton) sendButton.toggleAttribute('data-ready', complete);
+        write(sendHint, complete ? 'Goes straight to my inbox' : 'Fill the required ones first');
+      }
+
+      if (status === 'sent') {
+        write(firstNameSlot, (answers.get('name') ?? '').trim().split(/\s+/)[0] || 'then');
+      }
+
+      // Written only when it is on screen: composing it on every keystroke
+      // would encode the whole message for a link nobody is looking at.
+      if (status === 'error' && mailtoLink) mailtoLink.href = mailtoHref();
+
+      const percent = !idle || step >= total ? 100 : Math.round((step / total) * 100);
+      if (progressFill) progressFill.style.width = `${percent}%`;
+      if (progress) {
+        progress.setAttribute('aria-valuenow', String(percent));
+        progress.setAttribute(
+          'aria-valuetext',
+          status === 'sending'
+            ? 'Sending'
+            : status === 'sent'
+              ? 'Sent'
+              : status === 'error'
+                ? 'Not sent'
+                : step >= total
+                  ? 'Review'
+                  : `Question ${pad(step + 1)} of ${pad(total)}`
+        );
+      }
+    };
+
+    // Never scrollIntoView: the screen is already in view, and the browser
+    // would scroll the whole page to a field that has just been re-laid out.
+    // The multi-select has no field, so the first option takes the focus, and
+    // the two screens with neither hand it to their heading.
+    const focusScreen = () => {
+      const landing =
+        field() ??
+        (STEPS[step]?.kind === 'options' ? optionButtons[0] : null) ??
+        flow.querySelector<HTMLElement>('[data-screen]:not([hidden]) h1');
+
+      if (!landing) return;
+      try {
+        landing.focus({ preventScroll: true });
+      } catch {
+        landing.focus();
+      }
+    };
+
+    const go = (index: number) => {
+      const target = Math.max(0, Math.min(total, index));
+      const moved = target !== step;
+      step = target;
+      nudge = false;
+      render();
+
+      if (!moved) return;
+
+      replay(heading);
+      replay(fieldRow);
+      replay(optionsBlock);
+      focusScreen();
+    };
+
+    const next = () => {
+      if (!valid(step)) {
+        nudge = true;
+        render();
+        return;
+      }
+      go(step + 1);
+    };
+
+    const payload = () => ({
+      name: (answers.get('name') ?? '').trim(),
+      email: (answers.get('email') ?? '').trim(),
+      organisation: (answers.get('org') ?? '').trim(),
+      topics: [...topics],
+      message: (answers.get('message') ?? '').trim(),
+      page: 'portfolio/contact',
+      sentAt: new Date().toISOString(),
+      // The two the endpoint reads to tell a person from a script: the bait
+      // field, and how long the answers took.
+      trap: trap?.value ?? '',
+      elapsed: Date.now() - openedAt,
+    });
+
+    /** The same answers as an email, for when the endpoint is the thing broken. */
+    const mailtoHref = () => {
+      const data = payload();
+      const body = [
+        `Name: ${data.name || '—'}`,
+        `Email: ${data.email || '—'}`,
+        `Organisation: ${data.organisation || '—'}`,
+        `About: ${data.topics.join(', ') || '—'}`,
+        '',
+        data.message,
+      ].join('\n');
+
+      return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
+        `Portfolio contact — ${data.name || 'hello'}`
+      )}&body=${encodeURIComponent(body)}`;
+    };
+
+    const settle = (next: 'sent' | 'error') => {
+      status = next;
+      render();
+      focusScreen();
+    };
+
+    const send = async () => {
+      if (status === 'sending') return;
+
+      const firstInvalid = STEPS.findIndex((_, index) => !valid(index));
+      if (firstInvalid !== -1) {
+        go(firstInvalid);
+        nudge = true;
+        render();
+        return;
+      }
+
+      status = 'sending';
+      render();
+      focusScreen();
+
+      // A POST that answers in 80ms would leave "On its way…" on screen for a
+      // blink, which reads as a glitch rather than as work being done.
+      const shown = new Promise((resolve) => setTimeout(resolve, 700));
+      const abort = new AbortController();
+      const timeout = setTimeout(() => abort.abort(), 15000);
+
+      try {
+        const response = await fetch(CONTACT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload()),
+          signal: abort.signal,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // The status alone is not proof. A server that is not running PHP
+        // answers 200 and hands back the script itself, and the visitor would
+        // be told the message was sent when nothing was. Only the endpoint's
+        // own answer counts as sent.
+        const result = await response.json().catch(() => null);
+        if (!result || result.ok !== true) throw new Error('Endpoint did not confirm');
+
+        await shown;
+        settle('sent');
+      } catch {
+        await shown;
+        settle('error');
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+
+    // Everything back to the first question, answers included: the visitor
+    // asked for a second message, not for a copy of the first.
+    const reset = () => {
+      status = 'idle';
+      step = 0;
+      nudge = false;
+      answers.clear();
+      topics.clear();
+      if (trap) trap.value = '';
+      render();
+      replay(heading);
+      replay(fieldRow);
+      focusScreen();
+    };
+
+    const onInput = (event: Event) => {
+      const current = STEPS[step];
+      if (!current) return;
+      answers.set(current.id, (event.target as HTMLInputElement | HTMLTextAreaElement).value);
+      nudge = false;
+      render();
+    };
+
+    // Enter is the flow's main control; in the textarea Shift+Enter still
+    // breaks the line, which is the only place a newline is worth anything.
+    const onKeydown = (event: KeyboardEvent) => {
+      const current = STEPS[step];
+      if (!current) return;
+      if (event.key !== 'Enter') return;
+      if (current.kind === 'textarea' && event.shiftKey) return;
+      event.preventDefault();
+      next();
+    };
+
+    input?.addEventListener('input', onInput);
+    input?.addEventListener('keydown', onKeydown);
+    textarea?.addEventListener('input', onInput);
+    textarea?.addEventListener('keydown', onKeydown);
+
+    nextButtons.forEach((button) => button.addEventListener('click', next));
+    backButtons.forEach((button) => button.addEventListener('click', () => go(step - 1)));
+    rowButtons.forEach((button) =>
+      button.addEventListener('click', () => go(Number(button.dataset.row)))
+    );
+    optionButtons.forEach((button) =>
+      button.addEventListener('click', () => {
+        const label = button.dataset.option ?? '';
+        if (topics.has(label)) topics.delete(label);
+        else topics.add(label);
+        nudge = false;
+        render();
+      })
+    );
+    sendButtons.forEach((button) => button.addEventListener('click', send));
+    resetButton?.addEventListener('click', reset);
+
+    render();
+  }
+</script>
