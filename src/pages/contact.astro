@@ -827,6 +827,16 @@ const options = STEPS.find((step) => step.kind === 'options')?.options ?? [];
     .field {
       flex-wrap: wrap;
       gap: 14px;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    /* Under the whole row, the rule would sit below Next and read as the place
+       to type. It moves to the field itself, so it underlines the answer. */
+    .answer {
+      flex-basis: 100%;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--hairline);
     }
 
     /* Only the field's own Next: the multi-select keeps its link beside the
@@ -836,7 +846,7 @@ const options = STEPS.find((step) => step.kind === 'options')?.options ?? [];
       justify-content: flex-end;
       margin-bottom: 0;
       padding-bottom: 0;
-      /* The row's own rule runs under it now, so its underline would double. */
+      /* Its own underline would read as a second field under the first. */
       border-bottom: 0;
     }
   }
