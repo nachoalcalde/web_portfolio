@@ -14,7 +14,6 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 /** Pages without an `href` are announced, not linked: they do not exist yet. */
 const NAV = [
   { label: 'Work', href: '/work', page: 'work' },
-  { label: 'About' },
   { label: 'Studio' },
   { label: 'Contact', href: '/contact', page: 'contact' },
 ];
@@ -435,10 +434,6 @@ const Identity = current === 'home' ? 'div' : 'a';
 
     .menu[data-open] .menu-row:nth-child(3) .menu-item {
       transition-delay: 0.18s;
-    }
-
-    .menu[data-open] .menu-row:nth-child(4) .menu-item {
-      transition-delay: 0.22s;
     }
 
     .menu-foot {
