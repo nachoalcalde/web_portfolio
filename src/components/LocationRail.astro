@@ -8,13 +8,19 @@ interface Props {
    * a page whose first screen is the whole composition.
    */
   anchor?: 'viewport' | 'hero';
+  /** The line above the clock. Studio swaps the city for its own status. */
+  label?: string;
 }
 
-const { showClock = true, anchor = 'viewport' } = Astro.props;
+const {
+  showClock = true,
+  anchor = 'viewport',
+  label = 'Based in Madrid',
+} = Astro.props;
 ---
 
 <div class:list={['rail', anchor === 'hero' && 'in-hero']}>
-  <span class="place">Based in Madrid</span>
+  <span class="place">{label}</span>
   {showClock && <span class="time" data-clock-time hidden />}
 </div>
 

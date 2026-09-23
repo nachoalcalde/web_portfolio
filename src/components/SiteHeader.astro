@@ -3,7 +3,7 @@ import GrainOverlay from './GrainOverlay.astro';
 
 interface Props {
   /** The page this header sits on: marks the nav and frees the identity link. */
-  current?: 'home' | 'work' | 'contact';
+  current?: 'home' | 'work' | 'studio' | 'contact';
 }
 
 const { current = 'home' } = Astro.props;
@@ -14,7 +14,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 /** Pages without an `href` are announced, not linked: they do not exist yet. */
 const NAV = [
   { label: 'Work', href: '/work', page: 'work' },
-  { label: 'Studio' },
+  { label: 'Studio', href: '/studio', page: 'studio' },
   { label: 'Contact', href: '/contact', page: 'contact' },
 ];
 
