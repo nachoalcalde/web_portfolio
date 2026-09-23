@@ -928,7 +928,9 @@ const BEYOND = [
       flex-direction: column;
     }
 
+    /* In a column the 200px basis would become each row's height. */
     .figure {
+      flex: none;
       padding: 18px 0;
     }
 
