@@ -1,0 +1,84 @@
+---
+import { Image } from 'astro:assets';
+
+interface Props {
+  label: string;
+  /**
+   * The eyebrow is the section's name, so it is its heading. `span` is for the
+   * one that sits above the page's h1 and cannot be a heading itself.
+   */
+  heading?: 'h2' | 'span';
+  /** `strong` is the reinforced head the design gives its two named sections. */
+  tone?: 'plain' | 'strong';
+  icon?: ImageMetadata;
+  /** Air under the head. The design sets it per section, not by a rhythm. */
+  space?: 'xs' | 'sm' | 'md' | 'lg';
+  /** Reveals the head on its own, for a section whose body reveals per block. */
+  reveal?: boolean;
+}
+
+const { label, heading: Label = 'h2', tone = 'plain', icon, space = 'md', reveal = false } = Astro.props;
+---
+
+<div class:list={['head', tone, `space-${space}`]} data-reveal={reveal ? true : undefined}>
+  {icon && <Image class="icon" src={icon} alt="" height={38} aria-hidden="true" />}
+  <Label class="label">{label}</Label>
+  <span class="rule"></span>
+</div>
+
+<style>
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .space-xs {
+    margin-bottom: 22px;
+  }
+
+  .space-sm {
+    margin-bottom: clamp(20px, 2.4vw, 34px);
+  }
+
+  .space-md {
+    margin-bottom: clamp(26px, 3vw, 44px);
+  }
+
+  .space-lg {
+    margin-bottom: clamp(32px, 4vw, 58px);
+  }
+
+  .icon {
+    flex: 0 0 auto;
+    display: block;
+    width: 19px;
+    height: 19px;
+    opacity: 0.85;
+  }
+
+  .label {
+    margin: 0;
+    font-family: inherit;
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink-dim);
+  }
+
+  .strong .label {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    color: var(--ink);
+  }
+
+  .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+</style>

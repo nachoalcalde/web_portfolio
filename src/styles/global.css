@@ -30,7 +30,7 @@
      breakpoint below therefore moves the whole composition at once. */
   --gutter: clamp(18px, 3.2vw, 48px);
   --portrait-w: min(72.9svh, 46vw, 1024px);
-  --name-size: min(15.6vw, 30svh);
+  --name-size: min(11vw, 30svh);
 }
 
 /* The portrait is a cut-out, so it cannot be cropped the way a full-bleed photo
@@ -42,9 +42,24 @@
 /* --portrait-w only has a job on desktop. Below 1200px the figure is sized by
    the hero it fills rather than by a width of its own (see Portrait.astro). */
 
+/* From here down the header is fixed (see SiteHeader.astro), so its height
+   stops being part of the flow and the pages have to clear it themselves:
+   18px of padding, a 31px identity block and 18px again. */
+@media (max-width: 1199px) {
+  :root {
+    --header-h: 67px;
+  }
+}
+
 @media (max-width: 639px) {
   :root {
     --gutter: clamp(16px, 4.6vw, 26px);
+
+    /* Only a starting point: NameMarquee.astro measures the name and scales
+       this down to the width of the screen. It is pinned here so that taking
+       the name down another notch on desktop cannot reach the phone, where the
+       size is decided by the measurement and not by this value. */
+    --name-size: min(13.2vw, 30svh);
   }
 }
 
@@ -53,7 +68,7 @@
    a 844x390 phone also matches. */
 @media (max-height: 560px) and (orientation: landscape) {
   :root {
-    --name-size: min(15.6vw, 22svh);
+    --name-size: min(11vw, 22svh);
   }
 }
 
@@ -93,6 +108,29 @@ a:hover {
 ::selection {
   background: var(--ink);
   color: var(--bg);
+}
+
+/* The system's one link pattern, shared by every page: display type on a
+   standing rule, both of which take the accent on hover. The rule is always
+   there rather than appearing on hover, so the link is findable by keyboard
+   and without relying on colour alone. */
+.big-link {
+  width: max-content;
+  max-width: 100%;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-display);
+  font-size: clamp(16px, 1.3vw, 21px);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  transition:
+    color 0.25s,
+    border-color 0.25s;
+}
+
+.big-link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 @keyframes rise {

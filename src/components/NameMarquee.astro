@@ -27,9 +27,9 @@ const GLYPHS: Glyph[] = [
 ];
 ---
 
-<div class="marquee">
+<div class="marquee" data-marquee>
   <div class="track">
-    <h1 class="name">
+    <h1 class="name" data-name>
       {
         GLYPHS.map((glyph) =>
           'space' in glyph ? (
@@ -42,7 +42,7 @@ const GLYPHS: Glyph[] = [
         )
       }
     </h1>
-    <div class="name" aria-hidden="true">
+    <div class="name copy" aria-hidden="true">
       {
         GLYPHS.map((glyph) =>
           'space' in glyph ? (
@@ -64,6 +64,13 @@ const GLYPHS: Glyph[] = [
     z-index: 3;
     flex: 0 0 auto;
     overflow: hidden;
+    /* Out past the page gutter on both sides. The name is meant to run off the
+       screen, and without this the marquee's own overflow cuts the letters at
+       the gutter instead, leaving a strip of background down the right edge
+       with a sliced glyph against it. Below 1200px the same bleed is done with
+       insets, because there the marquee is positioned rather than in flow. */
+    margin-right: calc(var(--gutter) * -1);
+    margin-left: calc(var(--gutter) * -1);
     padding-bottom: clamp(8px, 1.6vh, 22px);
     pointer-events: none;
   }
@@ -101,6 +108,19 @@ const GLYPHS: Glyph[] = [
     color: var(--ink);
   }
 
+  /* Phones: the name is fitted to the width of the screen (see the script), so
+     at the start of the loop one whole copy of it is on screen and none of it
+     is cut. The delay holds it there while the letters finish rising and for a
+     beat after, which is what makes the name readable on opening; from then on
+     it runs like everywhere else. `backwards` is what keeps it on the first
+     frame during the delay instead of snapping into it when the loop starts. */
+  @media (max-width: 639px) {
+    .track {
+      animation-delay: 2.5s;
+      animation-fill-mode: backwards;
+    }
+  }
+
   .gap {
     display: inline-block;
   }
@@ -115,3 +135,53 @@ const GLYPHS: Glyph[] = [
     animation: riseUp 1s var(--ease-rise) both;
   }
 </style>
+
+<script>
+  // On a phone the full name is wider than the screen, so the marquee would be
+  // showing a fragment of it at the moment the page opens. The size at which it
+  // fits cannot be written as a vw value without hardcoding the font's metrics,
+  // and those change under our feet anyway while Archivo is still loading, so
+  // it is measured: one copy is laid out at the size the stylesheet asks for,
+  // and the font size is scaled by whatever it overflows the screen by. Above
+  // 639px the name is meant to run wider than the viewport, so the override is
+  // dropped and the stylesheet's --name-size stands.
+  const marquee = document.querySelector<HTMLElement>('[data-marquee]');
+  const name = marquee?.querySelector<HTMLElement>('[data-name]');
+
+  if (marquee && name) {
+    const phone = window.matchMedia('(max-width: 639px)');
+
+    const fit = () => {
+      marquee.style.removeProperty('--name-size');
+
+      if (!phone.matches) return;
+
+      const size = parseFloat(getComputedStyle(name).fontSize);
+      // scrollWidth as well as the box: if anything upstream ever squeezes the
+      // track, the box stops being the width of the name and the fit would
+      // silently become a no-op.
+      const width = Math.max(name.scrollWidth, name.getBoundingClientRect().width);
+      const available = marquee.clientWidth;
+
+      if (!size || !width || !available) return;
+
+      // Only ever shrinks. The first pass runs on the fallback font, whose
+      // metrics are not Archivo's, and growing on that measurement would leave
+      // the name too wide once the real font lands.
+      const fitted = Math.min(size, (size * available) / width);
+
+      marquee.style.setProperty('--name-size', `${fitted.toFixed(2)}px`);
+    };
+
+    let frame = 0;
+    const refit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    };
+
+    fit();
+    document.fonts?.ready.then(fit);
+    window.addEventListener('resize', refit, { passive: true });
+    phone.addEventListener('change', refit);
+  }
+</script>

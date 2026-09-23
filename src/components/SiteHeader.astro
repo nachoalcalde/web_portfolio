@@ -1,28 +1,54 @@
 ---
 import GrainOverlay from './GrainOverlay.astro';
 
+interface Props {
+  /** The page this header sits on: marks the nav and frees the identity link. */
+  current?: 'home' | 'work' | 'contact';
+}
+
+const { current = 'home' } = Astro.props;
+
 const EMAIL = 'ialcaldecid@gmail.com';
 const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
-const UPCOMING = ['Work', 'About', 'Studio'];
+/** Pages without an `href` are announced, not linked: they do not exist yet. */
+const NAV = [
+  { label: 'Work', href: '/work', page: 'work' },
+  { label: 'About' },
+  { label: 'Studio' },
+  { label: 'Contact', href: '/contact', page: 'contact' },
+];
+
+// On the home page the identity is where you already are, so it is a label;
+// everywhere else it is the way back.
+const Identity = current === 'home' ? 'div' : 'a';
 ---
 
 <header class="header" data-header>
-  <div class="identity">
+  <Identity class="identity" href={current === 'home' ? undefined : '/'}>
     <span class="monogram">NA</span>
     <span class="names">
       <span class="full-name">Nacho Alcalde Cid</span>
       <span class="role">Portfolio — 2026</span>
     </span>
-  </div>
+  </Identity>
 
   <nav class="nav">
     {
-      UPCOMING.map((label) => (
-        <span class="upcoming">{label}</span>
-      ))
+      NAV.map((item) =>
+        item.href ? (
+          <a
+            class:list={['nav-link', { 'is-current': item.page === current }]}
+            href={item.href}
+            aria-current={item.page === current ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ) : (
+          <span class="upcoming">{item.label}</span>
+        )
+      )
     }
-    <a class="contact" href={`mailto:${EMAIL}`}>Contact</a>
   </nav>
 
   <button
@@ -42,18 +68,25 @@ const UPCOMING = ['Work', 'About', 'Studio'];
 <div class="menu" id="site-menu" data-menu inert>
   <ul class="menu-list">
     {
-      UPCOMING.map((label) => (
+      NAV.map((item) => (
         <li class="menu-row">
-          <span class="menu-item is-soon">
-            {label}
-            <em class="menu-soon">soon</em>
-          </span>
+          {item.href ? (
+            <a
+              class:list={['menu-item', { 'is-current': item.page === current }]}
+              href={item.href}
+              aria-current={item.page === current ? 'page' : undefined}
+            >
+              {item.label}
+            </a>
+          ) : (
+            <span class="menu-item is-soon">
+              {item.label}
+              <em class="menu-soon">soon</em>
+            </span>
+          )}
         </li>
       ))
     }
-    <li class="menu-row">
-      <a class="menu-item" href={`mailto:${EMAIL}`}>Contact</a>
-    </li>
   </ul>
 
   <div class="menu-foot">
@@ -98,6 +131,9 @@ const UPCOMING = ['Work', 'About', 'Studio'];
     font-size: 12px;
     letter-spacing: 0.02em;
     color: var(--ink);
+    transition:
+      color 0.22s,
+      border-color 0.22s;
   }
 
   .names {
@@ -157,13 +193,30 @@ const UPCOMING = ['Work', 'About', 'Studio'];
     opacity: 1;
   }
 
-  .contact {
+  .nav-link {
     color: var(--ink);
   }
 
-  .contact:hover {
+  .nav-link:hover {
     color: var(--accent);
   }
+
+  /* The page you are on, underlined in the accent. The padding is what keeps
+     that rule off the type; the header aligns on the baseline, so it costs the
+     row no height. */
+  .nav-link.is-current {
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--accent);
+  }
+
+  /* Every colour inside the identity is set explicitly, so the link would have
+     no hover at all without this. The monogram is the one piece that is
+     already a bordered mark, so it carries it. */
+  a.identity:hover .monogram {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
 
   /* Two rules over a 40px button: the glyph is 20px wide, the negative margins
      let the target overhang the header's edges without moving the glyph. */
@@ -347,6 +400,16 @@ const UPCOMING = ['Work', 'About', 'Studio'];
 
     .menu-item.is-soon {
       color: var(--ink-disabled);
+    }
+
+    /* The nav's accent underline does not survive at this size: under a 48px
+       line it reads as a rule across the row rather than a mark on one item. */
+    .menu-item.is-current::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
     }
 
     .menu-soon {

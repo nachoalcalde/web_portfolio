@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import GrainOverlay from '../components/GrainOverlay.astro';
-import LocationPill from '../components/LocationPill.astro';
+import LocationRail from '../components/LocationRail.astro';
 import NameMarquee from '../components/NameMarquee.astro';
 import Portrait from '../components/Portrait.astro';
 import SiteHeader from '../components/SiteHeader.astro';
@@ -15,7 +15,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
   description="Security strategy in Sanitas (Bupa) across seven markets in Europe and Latin America."
 >
   <div class="page">
-    <SiteHeader />
+    <SiteHeader current="home" />
 
     <main class="main">
       <section class="pitch">
@@ -39,8 +39,8 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
         <div class="contact">
           <span class="eyebrow-label">Get in touch</span>
-          <a class="contact-link" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
-          <a class="contact-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+          <a class="big-link contact-link" href={LINKEDIN} target="_blank" rel="noopener">LinkedIn</a>
+          <a class="big-link contact-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
         </div>
       </section>
     </main>
@@ -54,7 +54,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
 
       <NameMarquee />
 
-      <LocationPill />
+      <LocationRail anchor="hero" />
     </div>
 
     <GrainOverlay />
@@ -86,7 +86,7 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
     align-items: flex-end;
     justify-content: center;
     gap: clamp(24px, 3vw, 56px);
-    padding: clamp(40px, 10vh, 130px) 0 clamp(58px, 7.5vw, 140px);
+    padding: clamp(40px, 10vh, 130px) clamp(16px, 2vw, 28px) clamp(58px, 7.5vw, 140px) 0;
   }
 
   .pitch {
@@ -183,24 +183,9 @@ const LINKEDIN = 'https://www.linkedin.com/in/ignacioalcaldecid/';
     gap: 6px;
   }
 
+  /* Everything but the wrap comes from `.big-link` in global.css. */
   .contact-link {
-    width: max-content;
-    max-width: 100%;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--rule);
-    font-family: var(--font-display);
-    font-size: clamp(16px, 1.3vw, 21px);
-    letter-spacing: -0.01em;
     white-space: nowrap;
-    color: var(--ink);
-    transition:
-      color 0.25s,
-      border-color 0.25s;
-  }
-
-  .contact-link:hover {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
   }
 
   /* Tablets, narrow windows and phones held sideways: 240px + 210px of text

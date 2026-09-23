@@ -9,7 +9,7 @@ import portrait from '../assets/portrait.png';
   src={portrait}
   alt="Nacho Alcalde Cid"
   widths={[220, 320, 440, 660, 880, 1024]}
-  sizes="(max-width: 639px) 145vw, (max-width: 1199px) 95vw, 46vw"
+  sizes="(max-width: 639px) 170vw, (max-width: 1199px) 95vw, 46vw"
   loading="eager"
   decoding="async"
   fetchpriority="high"
@@ -59,13 +59,31 @@ import portrait from '../assets/portrait.png';
   }
 
   /* Phones: the figure stops being scaled to fit and is cropped by the screen
-     instead, which is the only way a cut-out reads as a close-up. It grows into
-     whatever the hero has left over and `cover` spends that on the sides, so
-     the arms bleed off the edges and the face stays large. `object-position`
-     keeps the top of the head just under the header. */
+     instead, which is the only way a cut-out reads as a close-up. The arms
+     bleed off both edges and the face stays large.
+
+     The scale comes from the width rather than from the height left over: at
+     77.6svh the figure stands exactly one screen tall (its ratio is 1024/1320),
+     which is the size it had when it filled the hero. Fixing it there is what
+     lets the top margin push the head clear of the header without the face
+     shrinking with it: `cover` takes the difference off the bottom of the
+     figure, which was already the part running off the screen. The max() is a
+     floor for a phone narrow enough that 77.6svh would not cover its width.
+
+     The margin is what clears the header, less the cutout's own empty top band:
+     the PNG carries 55 of its 1320 rows above the head, which at this scale is
+     always 4.17svh, so subtracting it leaves the clamp as the air actually seen
+     between the header and the head. */
   @media (max-width: 639px) {
     .portrait {
-      flex: 1 1 auto;
+      /* A zero basis rather than the intrinsic height: at 77.6svh wide the
+         figure is a full screen tall on its own, so an auto basis plus the
+         margin below would make the hero taller than one screen and push the
+         name off the bottom of it. */
+      flex: 1 1 0;
+      align-self: center;
+      width: max(calc(100% + var(--gutter) * 2), 77.6svh);
+      margin: calc(var(--header-h) + clamp(8px, 2svh, 20px) - 4.17svh) 0 0;
       object-fit: cover;
       object-position: 50% 0%;
     }

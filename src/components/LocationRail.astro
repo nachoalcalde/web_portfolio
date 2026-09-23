@@ -1,0 +1,109 @@
+---
+interface Props {
+  /** Prototype prop `showClock`: hides the Madrid time. */
+  showClock?: boolean;
+  /**
+   * Where the rail hangs below 1200px. `viewport` keeps it pinned to the screen
+   * the way the design draws it; `hero` parks it inside a one-screen hero, for
+   * a page whose first screen is the whole composition.
+   */
+  anchor?: 'viewport' | 'hero';
+}
+
+const { showClock = true, anchor = 'viewport' } = Astro.props;
+---
+
+<div class:list={['rail', anchor === 'hero' && 'in-hero']}>
+  <span class="place">Based in Madrid</span>
+  {showClock && <span class="time" data-clock-time hidden />}
+</div>
+
+<style>
+  .rail {
+    position: fixed;
+    right: clamp(3px, 0.9vw, 14px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    pointer-events: none;
+    animation: fade 1.6s ease both;
+  }
+
+  .place {
+    writing-mode: vertical-rl;
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ink-faint);
+  }
+
+  .time {
+    writing-mode: vertical-rl;
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  /* Without JS the time never unhides, so the rail degrades to the city alone
+     rather than to a gap under it. */
+  .time[hidden] {
+    display: none;
+  }
+
+  /* Phones: same rail, a size down, so it reads as a margin note beside the
+     figure rather than a second column of type. */
+  @media (max-width: 639px) {
+    .rail {
+      gap: 14px;
+    }
+
+    .place {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+    }
+
+    .time {
+      font-size: 11px;
+    }
+  }
+
+  /* From 1199px down the hero-anchored rail rides inside the one-screen hero
+     rather than the viewport, so it cannot follow the page over the copy below
+     the fold. The negative right offset takes it back out to the screen edge
+     the design places it on, past the page gutter. */
+  @media (max-width: 1199px) {
+    .rail.in-hero {
+      position: absolute;
+      right: calc(clamp(3px, 0.9vw, 14px) - var(--gutter));
+      top: 50%;
+    }
+  }
+</style>
+
+<script>
+  const time = document.querySelector<HTMLElement>('[data-clock-time]');
+
+  if (time) {
+    const format = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    });
+
+    const tick = () => {
+      time.textContent = format.format(new Date());
+      time.hidden = false;
+    };
+
+    tick();
+    setInterval(tick, 20_000);
+  }
+</script>

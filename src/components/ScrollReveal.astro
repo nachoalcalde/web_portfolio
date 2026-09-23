@@ -1,0 +1,61 @@
+---
+/**
+ * Reveal-on-scroll for anything marked `data-reveal`, shared by every page that
+ * has content below the fold.
+ *
+ * The prototype hid the blocks from JS on mount so that a page without JS stays
+ * readable. That leaves a flash: the module below is deferred, so an element
+ * above the fold paints before it is hidden. Here the hiding is CSS, unlocked
+ * by a blocking inline script that runs while the page is still parsing, so
+ * there is no frame in which a revealed block is visible and no rule at all
+ * when JS never runs.
+ */
+---
+
+<script is:inline>
+  document.documentElement.classList.add('js-reveal');
+</script>
+
+<style is:global>
+  html.js-reveal [data-reveal] {
+    opacity: 0;
+  }
+
+  /* The observer below bails out under reduced motion, so nothing would ever
+     take these back to full opacity. */
+  @media (prefers-reduced-motion: reduce) {
+    html.js-reveal [data-reveal] {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (!('IntersectionObserver' in window) || reduced.matches) {
+    // Nothing is going to reveal these, so the rule that hides them has to go.
+    // The stylesheet already spares reduced motion; this is the browser with no
+    // observer, which would otherwise be left with a blank page.
+    document.documentElement.classList.remove('js-reveal');
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+
+          // `both` holds the block on the last keyframe, which is also what
+          // clears the opacity:0 above once the animation is done.
+          (entry.target as HTMLElement).style.animation = 'rise 0.9s var(--ease-out) both';
+          observer.unobserve(entry.target);
+        }
+      },
+      // A block has to be 12% clear of the bottom edge before it moves, or it
+      // would animate while still being scrolled into view.
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.06 }
+    );
+
+    targets.forEach((target) => observer.observe(target));
+  }
+</script>
