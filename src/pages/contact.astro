@@ -971,16 +971,27 @@ const options = STEPS.find((step) => step.kind === 'options')?.options ?? [];
         if (input) {
           input.hidden = current.kind !== 'input';
           if (current.kind === 'input') {
-            input.type = current.type ?? 'text';
-            input.placeholder = current.placeholder ?? '';
-            input.setAttribute('autocomplete', current.autocomplete ?? 'off');
+            // Only when the step changes them: this runs on every keystroke,
+            // and iOS Safari reacts to attribute writes on the focused field
+            // even when the value is the same.
+            const type = current.type ?? 'text';
+            const autocomplete = current.autocomplete ?? 'off';
+            if (input.type !== type) input.type = type;
+            if (input.placeholder !== (current.placeholder ?? '')) {
+              input.placeholder = current.placeholder ?? '';
+            }
+            if (input.getAttribute('autocomplete') !== autocomplete) {
+              input.setAttribute('autocomplete', autocomplete);
+            }
             if (input.value !== answer) input.value = answer;
           }
         }
         if (textarea) {
           textarea.hidden = current.kind !== 'textarea';
           if (current.kind === 'textarea') {
-            textarea.placeholder = current.placeholder ?? '';
+            if (textarea.placeholder !== (current.placeholder ?? '')) {
+              textarea.placeholder = current.placeholder ?? '';
+            }
             if (textarea.value !== answer) textarea.value = answer;
             grow();
           }
@@ -1065,6 +1076,17 @@ const options = STEPS.find((step) => step.kind === 'options')?.options ?? [];
     const go = (index: number) => {
       const target = Math.max(0, Math.min(total, index));
       const moved = target !== step;
+
+      // Name, email and organisation are one input whose type changes under
+      // it. On an iPhone tapping Next leaves that input focused, and iOS Safari
+      // rebuilds the field's editor when the type changes, so the keyboard
+      // stays up but typing goes nowhere, and tapping the field again does
+      // nothing because it is already focused. Letting go of the focus first
+      // means focusScreen() below lands on a fresh field, still inside the tap.
+      if (moved && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
       step = target;
       nudge = false;
       render();
