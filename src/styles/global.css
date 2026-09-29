@@ -87,6 +87,14 @@ html {
   text-size-adjust: 100%;
 }
 
+/* Windows draws the classic light scrollbar, arrows included, on the pages
+   taller than the screen. Thin and in the rule colour over no track, it is
+   barely a hairline: enough to say there is more below and nothing else. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
 * {
   box-sizing: border-box;
 }
