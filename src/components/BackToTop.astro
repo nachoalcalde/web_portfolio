@@ -1,0 +1,157 @@
+---
+/**
+ * Back to the top, for the pages long enough to need it. Hidden until the
+ * reader is a screen and a half down, so it never sits over the hero. The ring
+ * around the arrow is how far down the page they are, closing at the end.
+ */
+---
+
+<button class="to-top" type="button" aria-label="Back to top" data-to-top>
+  {/* pathLength=100 makes the dash offset a percentage, whatever the radius. */}
+  <svg class="dial" viewBox="0 0 48 48" aria-hidden="true">
+    <circle class="track" cx="24" cy="24" r="21" />
+    <circle class="progress" cx="24" cy="24" r="21" pathLength="100" data-to-top-progress />
+  </svg>
+  <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M8 13V3.5M3.5 8 8 3.5 12.5 8" />
+  </svg>
+</button>
+
+<style>
+  /* Bottom right, clear of the location rail: the rail is centred on the
+     screen, so the corner is the one place on that edge it never reaches.
+     Same glass as the scrolled header. */
+  .to-top {
+    position: fixed;
+    right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    bottom: calc(clamp(18px, 2.4vw, 32px) + env(safe-area-inset-bottom, 0px));
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    color: var(--ink);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition:
+      opacity 0.35s ease,
+      transform 0.35s var(--ease-out),
+      visibility 0s linear 0.35s,
+      color 0.25s;
+  }
+
+  .to-top[data-shown] {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition:
+      opacity 0.35s ease,
+      transform 0.35s var(--ease-out),
+      visibility 0s,
+      color 0.25s;
+  }
+
+  .to-top:hover {
+    color: var(--accent);
+  }
+
+  .to-top:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .dial,
+  .arrow {
+    grid-area: 1 / 1;
+  }
+
+  /* Turned a quarter back so the ring starts filling from twelve o'clock. Not
+     called .ring: that is a Tailwind utility, and it would draw a square
+     box-shadow round the SVG. */
+  .dial {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .dial circle {
+    fill: none;
+    stroke-width: 1.5;
+  }
+
+  .track {
+    stroke: var(--hairline-strong);
+  }
+
+  .progress {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+  }
+
+  .arrow {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+</style>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-to-top]');
+  const progress = document.querySelector<SVGCircleElement>('[data-to-top-progress]');
+
+  if (button && progress) {
+    let shown = false;
+    let queued = false;
+
+    const update = () => {
+      queued = false;
+
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+      progress.style.strokeDashoffset = String(100 - ratio * 100);
+
+      const next = window.scrollY > window.innerHeight * 1.5;
+      if (next === shown) return;
+      shown = next;
+      button.toggleAttribute('data-shown', next);
+    };
+
+    // One write per frame however many scroll events land in it.
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    button.addEventListener('click', () => {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+
+      // The button hides once the page is back at the top, and keyboard focus
+      // would be left on it, at the end of the tab order. Hand it to the first
+      // control in the header instead, which is where the page starts.
+      if (button.matches(':focus-visible')) {
+        document
+          .querySelector<HTMLElement>('[data-header] a[href], [data-header] button')
+          ?.focus({ preventScroll: true });
+      }
+    });
+  }
+</script>
